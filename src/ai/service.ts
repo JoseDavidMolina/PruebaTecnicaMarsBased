@@ -218,7 +218,7 @@ export function answerQuery(query: ShipmentQuery, matches: ShipmentFacts[]): Que
     const action = suggestNextAction(s, f.risk);
     const text = [
       `${s.reference} (order ${s.orderRef}, ${customerOf(s).name}) is ${STATUS_PHRASE[f.status]}.`,
-      last && `Last update from ${OPERATORS[last.operatorId].name}: ${formatDateTime(last.at)} ${zoneName(last.at)}${last.location ? ` in ${last.location}` : ""}.`,
+      last && `Last update from ${OPERATORS[last.operatorId].name}: ${formatDateTime(last.at)} ${zoneName(last.at)}${last.location ? ` (${last.location})` : ""}.`,
       ...f.risk.reasons.filter((r) => !r.startsWith("ETA is") && !r.startsWith("Low confidence")), // the ETA sentence covers these
       etaSentence(f),
       action.kind !== "none" && `Suggested next step: ${action.label}.`,

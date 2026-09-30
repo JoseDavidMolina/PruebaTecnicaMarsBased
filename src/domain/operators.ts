@@ -149,12 +149,15 @@ const parsers: Record<OperatorId, (payload: unknown) => Parsed | null> = {
     const r = bluemeridianSchema.safeParse(payload);
     if (!r.success) return null;
     const { event, port, at, vessel, eta } = r.data;
+    const portName = PORT_NAMES[port] ?? port;
     return {
       rawCode: event,
       rawStatus: [event, port, vessel].filter(Boolean).join(" · "),
       status: BLUEMERIDIAN_CODES[event] ?? "unknown",
       at: iso(at),
-      location: PORT_NAMES[port] ?? port,
+      // A noon report (POS) is sent at sea, and its port is the next port of call, not where the vessel is.
+      // The feed carries no coordinates, so the position is only described, never invented.
+      location: event === "POS" ? `At sea, bound for ${portName}` : portName,
       eta: eta ? { earliest: iso(eta), latest: iso(eta) } : undefined,
     };
   },

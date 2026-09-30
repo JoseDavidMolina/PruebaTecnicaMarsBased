@@ -62,6 +62,15 @@ describe("normalizeEvent", () => {
     expect(m?.eta?.latest).toBe("2026-10-09T18:00:00.000Z");
   });
 
+  it("places a Blue Meridian noon report at sea, bound for its port, keeping the raw event", () => {
+    const m = ev("bluemeridian", { event: "POS", port: "MXVER", at: "2026-09-29T07:00:00Z", vessel: "MV Aurora Tide" });
+    expect(m).toMatchObject({
+      status: "on_vessel",
+      rawStatus: "POS · MXVER · MV Aurora Tide",
+      location: "At sea, bound for Port of Veracruz",
+    });
+  });
+
   it("maps Alpenweg short codes with compact dates in Vienna local time", () => {
     expect(ev("alpenweg", { st: "UNT", datum: "202610031400", ort: "Linz", txt: "Unterwegs" })).toMatchObject({
       status: "in_transit",
