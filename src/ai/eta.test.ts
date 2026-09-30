@@ -62,6 +62,12 @@ describe("predictEta", () => {
     expect(eta("shp-1001").explanation).not.toMatch(/in transit/i);
   });
 
+  it("never calls a shipment with an incident on track", () => {
+    const e = eta("shp-1010"); // Tarnwick: delivery attempt failed
+    expect(e.explanation).not.toMatch(/on track|in transit/i);
+    expect(e.explanation).toBe("Planned to reach Villeurbanne on 7 Oct. The operator reported an incident; allowing one extra day.");
+  });
+
   it("is on time for a normal road shipment", () => {
     expect(isLate(eta("shp-1006"))).toBe(false);
     expect(eta("shp-1006").confidence).toBe("high");
