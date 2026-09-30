@@ -2,6 +2,17 @@ import { expect, test } from "@playwright/test";
 
 // The demo script, end to end. Each test gets a fresh browser context, so demo cookies start clean.
 
+// Every page must hydrate cleanly. (A screenshot taken before hydration hides the caret with an inline style,
+// which React reports as a mismatch: that is the harness, not the app, so none is taken here.)
+let hydrationErrors: string[] = [];
+test.beforeEach(({ page }) => {
+  hydrationErrors = [];
+  page.on("console", (m) => {
+    if (m.type() === "error" && /hydrat/i.test(m.text())) hydrationErrors.push(`${page.url()}: ${m.text().slice(0, 200)}`);
+  });
+});
+test.afterEach(() => expect(hydrationErrors).toEqual([]));
+
 test("operations: briefing, search, and an operator update that recalculates the ETA", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("daily-summary")).toContainText("5 at risk (1 held at customs, 1 delayed at port, 1 with no recent update");
