@@ -74,7 +74,7 @@ test("a drafted warning reaches the customer only once ops sends it", async ({ p
   await expect(page.getByTestId("customer-notice")).toContainText("PO-12402: Your shipment will arrive 2 days later than planned");
 });
 
-test("customer: own perimeter, proactive notices and the live delivery map", async ({ page }) => {
+test("customer: own perimeter, proactive notices and the reported delivery route", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Viewing as").selectOption("u-cust-solenne");
   await expect(page.getByRole("heading", { name: "Hello, Claire" })).toBeVisible();
@@ -84,6 +84,7 @@ test("customer: own perimeter, proactive notices and the live delivery map", asy
   await expect(page.getByTestId("eta-main")).toHaveText("Today, 09:00–11:00 CEST");
   await expect(page.getByText("Confirmed").first()).toBeVisible();
   await expect(page.locator(".leaflet-container")).toBeVisible();
+  await expect(page.getByTestId("map-source")).toHaveText("Reported by Tarnwick Parcel at 7 Oct, 08:50 CEST. Shown only while out for delivery.");
 
   // Another customer's shipment does not exist for Claire.
   const response = await page.goto("/shipments/shp-1001");

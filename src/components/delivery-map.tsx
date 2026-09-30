@@ -5,7 +5,7 @@ import { CircleMarker, MapContainer, Polyline, TileLayer, Tooltip } from "react-
 import type { Place, Position } from "@/domain/types";
 
 // Circle markers instead of Leaflet's default image icons, which need extra asset wiring in bundlers.
-export default function DeliveryMap({ positions, destination }: { positions: Position[]; destination: Place }) {
+export default function DeliveryMap({ positions, destination, lastLabel }: { positions: Position[]; destination: Place; lastLabel: string }) {
   const route = positions.map((p) => [p.lat, p.lng] as [number, number]);
   const current = route.at(-1)!;
   const bounds: [number, number][] = [...route, [destination.lat, destination.lng]];
@@ -18,7 +18,7 @@ export default function DeliveryMap({ positions, destination }: { positions: Pos
         <Tooltip>{destination.name}</Tooltip>
       </CircleMarker>
       <CircleMarker center={current} radius={8} pathOptions={{ color: "#fff", fillColor: "#7c3aed", fillOpacity: 1, weight: 3 }}>
-        <Tooltip permanent direction="top">Driver</Tooltip>
+        <Tooltip permanent direction="top">{lastLabel}</Tooltip>
       </CircleMarker>
     </MapContainer>
   );

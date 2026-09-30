@@ -9,7 +9,7 @@ import { customerOf, SIMULATED_UPDATES, siteOf } from "@/data";
 import { OPERATORS } from "@/domain/operators";
 import { hoursSinceUpdate, lastMilestone, unifiedTimeline } from "@/domain/timeline";
 import { DOCUMENT_LABELS, type Leg, type Milestone, type TrackedShipment } from "@/domain/types";
-import { DEMO_NOW, formatAgo, formatDateTime, zoneName } from "@/lib/clock";
+import { DEMO_NOW, formatAgo, formatDateTime, formatTime, zoneName } from "@/lib/clock";
 import { etaText } from "@/lib/eta-display";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -293,15 +293,23 @@ function SimulateCard({ shipment, applied }: { shipment: TrackedShipment; applie
   );
 }
 
+/** Positions are what the courier reported, not a live feed: the card says who reported them and when. */
 function MapCard({ shipment }: { shipment: TrackedShipment }) {
+  const last = shipment.positions!.at(-1)!;
+  const operator = OPERATORS[shipment.legs.at(-1)!.operatorId].name;
+  const reportedAt = `${formatDateTime(last.at)} ${zoneName(last.at)}`;
   return (
     <Card size="sm">
       <CardHeader>
-        <CardTitle>Live delivery route</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          Delivery route <ReliabilityBadge reliability="confirmed" />
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <DeliveryMap positions={shipment.positions!} destination={customerOf(shipment).place} />
-        <p className="mt-2 text-xs text-muted-foreground">Last driver position {formatDateTime(shipment.positions!.at(-1)!.at)} {zoneName(shipment.positions!.at(-1)!.at)}. Shown only while out for delivery.</p>
+        <DeliveryMap positions={shipment.positions!} destination={customerOf(shipment).place} lastLabel={`Reported ${formatTime(last.at)}`} />
+        <p className="mt-2 text-xs text-muted-foreground" data-testid="map-source">
+          Reported by {operator} at {reportedAt}. Shown only while out for delivery.
+        </p>
       </CardContent>
     </Card>
   );
