@@ -33,3 +33,11 @@ export const formatDuration = (hours: number): string => {
   const d = Math.round(h / 24);
   return `${d} day${d === 1 ? "" : "s"}`;
 };
+
+export const formatDateTime = (iso: string): string => `${formatDate(iso)}, ${formatTime(iso)}`;
+
+export const formatLongDate = (iso: string): string =>
+  new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: DISPLAY_TZ }).format(new Date(iso));
+
+export const isSameDay = (a: string | Date, b: string | Date): boolean =>
+  formatDate(new Date(a).toISOString()) === formatDate(new Date(b).toISOString());

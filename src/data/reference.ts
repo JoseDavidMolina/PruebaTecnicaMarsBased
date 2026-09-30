@@ -29,7 +29,7 @@ export const HUBS = {
 } satisfies Record<string, Place>;
 
 export const USERS: User[] = [
-  { id: "u-ops-es", name: "Marta Ruiz · Operations, Spain sites", role: "ops", siteIds: ["site-zgz", "site-bcn"] },
+  { id: "u-ops-all", name: "Marta Ruiz · Logistics control tower", role: "ops", siteIds: ["site-zgz", "site-bcn", "site-brno"] },
   { id: "u-ops-cz", name: "Tomáš Novák · Operations, Brno", role: "ops", siteIds: ["site-brno"] },
   { id: "u-cust-solenne", name: "Claire Dubois · Solenne Équipements", role: "customer", customerId: "cust-solenne" },
   { id: "u-cust-arvenza-mx", name: "Diego Herrera · Arvenza México", role: "customer", customerId: "cust-arvenza-mx" },
