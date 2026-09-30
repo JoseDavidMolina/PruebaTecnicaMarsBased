@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AutoSubmitSelect } from "./client-controls";
-import { ACTION_ICON, ActionControl, AiTag, EtaCell, ModeTrail, Pill, RiskBadge, StaleBadge, StatusBadge } from "./shipment-bits";
+import { ACTION_ICON, ActionControl, AiTag, EtaCell, JourneyLine, Pill, RiskBadge, StaleBadge, StatusBadge } from "./shipment-bits";
 
 export type DashboardParams = { q?: string; site?: string; op?: string; view?: string };
 
@@ -263,8 +263,8 @@ export async function OpsDashboard({
                       <div>
                         {siteOf(s).place.name} → {customerOf(s).place.name}
                       </div>
-                      <div className="mt-0.5 space-y-0.5 text-xs text-muted-foreground">
-                        <ModeTrail legs={s.legs} />
+                      <div className="mt-1 space-y-1 text-xs text-muted-foreground">
+                        <JourneyLine shipment={s} stale={f.stale} />
                         <div>{[...new Set(s.legs.map((l) => OPERATORS[l.operatorId].name))].join(", ")}</div>
                       </div>
                     </TableCell>

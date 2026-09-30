@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { ai } from "@/ai";
 import { loadFacts, noticeForCustomer } from "@/app/demo";
-import { CUSTOMERS, customerOf, siteOf } from "@/data";
+import { CUSTOMERS } from "@/data";
 import type { TrackedShipment, User } from "@/domain/types";
 import { etaText } from "@/lib/eta-display";
 import { Card, CardContent } from "@/components/ui/card";
 import { NoticeBanner } from "./shipment-detail";
-import { AiTag, ConfidenceMeter, DelayNote, ModeTrail, ReliabilityBadge, StatusBadge } from "./shipment-bits";
+import { AiTag, ConfidenceMeter, DelayNote, JourneyLine, ReliabilityBadge, StatusBadge } from "./shipment-bits";
 
 export async function CustomerHome({
   user,
@@ -70,12 +70,7 @@ export async function CustomerHome({
               <Card className="h-full transition-shadow hover:shadow-md">
                 <CardContent className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="font-medium">Order {s.orderRef}</div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {siteOf(s).place.name} → {customerOf(s).place.name} <ModeTrail legs={s.legs} />
-                      </div>
-                    </div>
+                    <div className="font-medium">Order {s.orderRef}</div>
                     <StatusBadge status={f.status} />
                   </div>
                   <div>
@@ -90,6 +85,7 @@ export async function CustomerHome({
                     {f.eta.reliability === "estimated" && <ConfidenceMeter confidence={f.eta.confidence} />}
                     {!delivered && <DelayNote eta={f.eta} stale={f.stale} />}
                   </div>
+                  <JourneyLine shipment={s} stale={f.stale} size="card" />
                 </CardContent>
               </Card>
             </Link>

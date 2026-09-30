@@ -22,7 +22,7 @@ import {
   ConfidenceMeter,
   DelayNote,
   MODE_ICON,
-  ModeTrail,
+  JourneyLine,
   Pill,
   ReliabilityBadge,
   RiskBadge,
@@ -383,8 +383,10 @@ function Header({ facts, variant }: { facts: ShipmentFacts; variant: Variant }) 
         {variant === "ops" ? `${s.orderRef} · ${customerOf(s).name}` : `Shipment ${s.reference}`}
         <span>·</span>
         {siteOf(s).name} → {customerOf(s).place.name} ({customerOf(s).place.country})
-        <ModeTrail legs={s.legs} />
       </p>
+      <div className="max-w-3xl pt-1">
+        <JourneyLine shipment={s} stale={facts.stale} size="full" />
+      </div>
       {/* Freshness is always visible: how old is what we are showing? */}
       <p className="text-xs text-muted-foreground" data-testid="freshness">
         {last

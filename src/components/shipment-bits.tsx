@@ -2,10 +2,11 @@ import { CircleCheck, CircleDashed, Clock, Mail, PhoneCall, Ship, Sparkles, Truc
 import { completeAction } from "@/app/actions";
 import { cn } from "@/lib/utils";
 import { SubmitButton } from "./client-controls";
-import { formatDuration } from "@/lib/clock";
+import { formatAgo, formatDuration, hoursBetween } from "@/lib/clock";
 import { delayNote, etaText, type DelayNote as DelayNoteData } from "@/lib/eta-display";
+import { journeyOf, type LegProgress } from "@/lib/journey";
 import type { EtaPrediction, NextAction, RiskAssessment } from "@/ai/types";
-import type { Confidence, Leg, NormalizedStatus, Reliability } from "@/domain/types";
+import type { Confidence, Leg, NormalizedStatus, Reliability, TrackedShipment } from "@/domain/types";
 
 type Tone = "neutral" | "blue" | "amber" | "red" | "green" | "violet";
 
@@ -143,14 +144,104 @@ export function EtaCell({ eta, delivered, stale }: { eta: EtaPrediction; deliver
 
 export const MODE_ICON = { road: Truck, sea: Ship } satisfies Record<Leg["mode"], LucideIcon>;
 
-export function ModeTrail({ legs }: { legs: Leg[] }) {
+const MODE_NAME: Record<Leg["mode"], string> = { road: "Road", sea: "Sea" };
+const PROGRESS_TEXT: Record<LegProgress, string> = { done: "done", current: "in progress", ahead: "planned" };
+
+type JourneySize = "compact" | "card" | "full";
+
+/** Last reported position: a teal dot; held or incident: a red square; stale: a hollow amber ring. */
+function JourneyMarker({ status, stale, size }: { status: NormalizedStatus; stale: boolean; size: JourneySize }) {
+  const alert = status === "customs_hold" || status === "exception";
   return (
-    <span role="img" className="inline-flex items-center gap-1 text-muted-foreground" aria-label={legs.map((l) => l.mode).join(" then ")}>
-      {legs.map((l) => {
-        const Icon = MODE_ICON[l.mode];
-        return <Icon key={l.id} className="size-3.5" />;
-      })}
-    </span>
+    <span
+      className={cn(
+        "shrink-0 ring-2 ring-card",
+        size === "compact" ? "size-2.5" : "size-3.5",
+        alert ? "rounded-[2px] bg-red-600" : stale ? "rounded-full border-2 border-amber-600 bg-card" : "rounded-full bg-route",
+      )}
+    />
+  );
+}
+
+const Stretch = ({ solid }: { solid: boolean }) => (
+  <span className={cn("h-0 min-w-2 flex-1 border-t-2", solid ? "border-route" : "border-dashed border-muted-foreground")} />
+);
+
+/**
+ * The route drawn as reported: solid teal where an operator reported travel, dashed where the rest is only
+ * planned (the same solid/dashed grammar as Confirmed/Estimated). Position is per leg, never interpolated.
+ */
+export function JourneyLine({ shipment, stale, size = "compact" }: { shipment: TrackedShipment; stale: boolean; size?: JourneySize }) {
+  const j = journeyOf(shipment);
+  const pos = j.position;
+  const node = size === "compact" ? "size-1.5" : "size-2";
+  const status = pos && STATUS[pos.milestone.status].label;
+  const where = pos?.milestone.location;
+  // Some feeds put the status in the location ("At sea, bound for …"): say it once.
+  const reported = where?.toLowerCase().startsWith((status ?? "").toLowerCase()) ? where : [status, where].filter(Boolean).join(", ");
+  const ago = pos && formatAgo(hoursBetween(pos.milestone.at));
+  const label = [
+    ...j.legs.map(({ leg, progress }) => `${MODE_NAME[leg.mode]} ${leg.from.name} to ${leg.to.name}, ${PROGRESS_TEXT[progress]}`),
+    j.delivered ? "delivered" : pos ? `last reported: ${reported}, ${ago}` : "no operator report yet",
+  ].join("; ");
+
+  return (
+    <div className={cn("min-w-0", size === "compact" ? "w-full max-w-56" : "space-y-1.5")}>
+      <div role="img" aria-label={label} className="flex items-end">
+        {j.legs.map(({ leg, progress }, i) => {
+          const Icon = MODE_ICON[leg.mode];
+          const here = pos?.legIndex === i ? pos : undefined;
+          const last = i === j.legs.length - 1;
+          return (
+            <div key={leg.id} className="flex min-w-0 flex-1 flex-col items-stretch gap-0.5">
+              <Icon className={cn("mx-auto text-muted-foreground", size === "compact" ? "size-3" : "size-3.5")} />
+              <div className="flex items-center gap-0.5">
+                {i === 0 && <span className={cn("shrink-0 rounded-full bg-foreground", node)} />}
+                {here?.at === "start" && <JourneyMarker status={here.milestone.status} stale={stale} size={size} />}
+                <Stretch solid={progress === "done" || (here !== undefined && here.at !== "start")} />
+                {here?.at === "middle" && (
+                  <>
+                    <JourneyMarker status={here.milestone.status} stale={stale} size={size} />
+                    <Stretch solid={false} />
+                  </>
+                )}
+                {here?.at === "end" ? (
+                  <JourneyMarker status={here.milestone.status} stale={stale} size={size} />
+                ) : last ? (
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-[2px] border-2",
+                      node,
+                      j.delivered ? "border-route bg-route" : "border-foreground bg-card",
+                    )}
+                  />
+                ) : (
+                  <span className={cn("shrink-0 rounded-full border-2 border-foreground bg-card", node)} />
+                )}
+              </div>
+              {size === "full" && (
+                <div className="flex justify-between gap-2 text-xs text-muted-foreground">
+                  <span className="truncate">{i === 0 && leg.from.name}</span>
+                  <span className="truncate text-right">{leg.to.name}</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {size === "card" && (
+        <div className="flex justify-between gap-2 text-xs text-muted-foreground">
+          <span className="truncate">{j.legs[0].leg.from.name}</span>
+          <span className="truncate text-right">{j.legs.at(-1)!.leg.to.name}</span>
+        </div>
+      )}
+      {size === "card" && pos && (
+        <p className="text-sm">
+          <span className="text-muted-foreground">Last reported: </span>
+          {reported} <span className="text-muted-foreground">· {ago}</span>
+        </p>
+      )}
+    </div>
   );
 }
 
