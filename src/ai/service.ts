@@ -1,7 +1,7 @@
-import { DEMO_NOW, formatDateRange, formatDuration, formatTime, hoursBetween } from "@/lib/clock";
+import { DEMO_NOW, formatDate, formatDateRange, formatDateTime, formatDuration, formatTime, hoursBetween } from "@/lib/clock";
 import { OPERATORS } from "@/domain/operators";
 import { activeLeg, currentStatus, hoursSinceUpdate, isStale, lastMilestone } from "@/domain/timeline";
-import { DOCUMENT_LABELS, type TrackedShipment } from "@/domain/types";
+import { DOCUMENT_LABELS, type Milestone, type NormalizedStatus, type TrackedShipment } from "@/domain/types";
 import { customerOf } from "@/data";
 import { isLate, predictEta } from "./eta";
 import { parseQuery, type ShipmentFacts } from "./query";
@@ -10,13 +10,17 @@ import {
   CustomerNoticeSchema,
   DailySummarySchema,
   EtaPredictionSchema,
+  MappingSuggestionSchema,
   NextActionSchema,
+  QueryAnswerSchema,
   RiskAssessmentSchema,
   ShipmentQuerySchema,
   type CustomerNotice,
   type DailySummary,
   type EtaPrediction,
+  type MappingSuggestion,
   type NextAction,
+  type QueryAnswer,
   type RiskAssessment,
   type RiskFlag,
   type ShipmentQuery,
@@ -33,6 +37,9 @@ export interface AiService {
   summarizeDay(shipments: TrackedShipment[]): Promise<DailySummary>;
   parseQuery(text: string): Promise<ShipmentQuery>;
   customerNotice(s: TrackedShipment, eta: EtaPrediction): Promise<CustomerNotice | null>;
+  /** A direct answer to a search, grounded only in the matching shipments' facts. */
+  answerQuery(query: ShipmentQuery, matches: ShipmentFacts[]): Promise<QueryAnswer>;
+  suggestMapping(m: Milestone): Promise<MappingSuggestion | null>;
 }
 
 // --- Mock logic (pure) --------------------------------------------------------
@@ -171,6 +178,76 @@ export function customerNotice(s: TrackedShipment, eta: EtaPrediction, now: Date
   return null;
 }
 
+const STATUS_PHRASE: Record<NormalizedStatus, string> = {
+  booked: "booked and waiting for pickup",
+  picked_up: "picked up",
+  in_transit: "in transit",
+  at_port: "at port",
+  on_vessel: "at sea",
+  customs_hold: "held at customs",
+  customs_cleared: "cleared through customs",
+  out_for_delivery: "out for delivery",
+  delivered: "delivered",
+  exception: "affected by an incident",
+  unknown: "in an unknown state",
+};
+
+const etaSentence = ({ status, eta }: ShipmentFacts): string => {
+  if (status === "delivered") return `Delivered on ${formatDateTime(eta.expected)}.`;
+  if (eta.reliability === "confirmed") return `The carrier confirmed delivery on ${formatDate(eta.earliest)}, ${formatTime(eta.earliest)}–${formatTime(eta.latest)}.`;
+  const late = isLate(eta) ? `, ${formatDuration(eta.delayHours)} late` : "";
+  return `Estimated delivery: ${formatDateRange(eta.earliest, eta.latest)} (${eta.confidence} confidence)${late}.`;
+};
+
+// Every sentence is built from derived facts, the same constraint a real LLM answer would be held to.
+export function answerQuery(matches: ShipmentFacts[]): QueryAnswer {
+  if (matches.length === 0) return { text: "No shipments match. Try fewer conditions, or check the reference." };
+
+  if (matches.length === 1) {
+    const f = matches[0];
+    const s = f.shipment;
+    const last = lastMilestone(s);
+    const action = suggestNextAction(s, f.risk);
+    const text = [
+      `${s.reference} (order ${s.orderRef}, ${customerOf(s).name}) is ${STATUS_PHRASE[f.status]}.`,
+      last && `Last update from ${OPERATORS[last.operatorId].name}: ${formatDateTime(last.at)}${last.location ? ` in ${last.location}` : ""}.`,
+      ...f.risk.reasons.filter((r) => !r.startsWith("ETA is") && !r.startsWith("Low confidence")), // the ETA sentence covers these
+      etaSentence(f),
+      action.kind !== "none" && `Suggested next step: ${action.label}.`,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    return { text, shipmentId: s.id };
+  }
+
+  const open = matches.filter((f) => f.status !== "delivered");
+  const attention = open.filter((f) => f.risk.level !== "low").sort((a, b) => b.risk.score - a.risk.score);
+  const late = open.filter((f) => isLate(f.eta)).length;
+  const worst = attention[0];
+  const text = [
+    `${matches.length} shipments match.`,
+    attention.length ? `${attention.length} ${attention.length === 1 ? "needs" : "need"} attention${late ? `, ${late} running late` : ""}.` : "None needs attention.",
+    worst && `Most urgent: ${worst.shipment.reference}, ${STATUS_PHRASE[worst.status]}. ${suggestNextAction(worst.shipment, worst.risk).label}.`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return { text };
+}
+
+// ponytail: a tiny glossary standing in for an LLM reading the operator's own wording. It only suggests;
+// a person confirms the mapping before it changes any status.
+const GLOSSARY: [RegExp, Exclude<NormalizedStatus, "unknown">, string][] = [
+  [/umladung|umschlag/i, "in_transit", "Transshipment: the goods are being moved between vehicles at a hub"],
+  [/verzögerung|verspätung/i, "exception", "The operator is reporting a delay"],
+  [/zoll/i, "customs_hold", "A customs-related update"],
+];
+
+export function suggestMapping(m: Milestone): MappingSuggestion | null {
+  if (m.status !== "unknown") return null;
+  const hit = GLOSSARY.find(([re]) => re.test(m.rawStatus));
+  return hit ? { status: hit[1], meaning: hit[2], confidence: "medium" } : null;
+}
+
 /** The shipment plus everything derived from it; what lists, filters and search work with. */
 export function factsFor(s: TrackedShipment, now: Date = DEMO_NOW): ShipmentFacts {
   const eta = predictEta(s, now);
@@ -195,5 +272,10 @@ export const mockAiService: AiService = {
   customerNotice: async (s, eta) => {
     const notice = customerNotice(s, eta);
     return notice && CustomerNoticeSchema.parse(notice);
+  },
+  answerQuery: async (_query, matches) => QueryAnswerSchema.parse(answerQuery(matches)),
+  suggestMapping: async (m) => {
+    const suggestion = suggestMapping(m);
+    return suggestion && MappingSuggestionSchema.parse(suggestion);
   },
 };

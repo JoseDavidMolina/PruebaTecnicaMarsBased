@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Search, Sparkles, X } from "lucide-react";
 import { ai } from "@/ai";
-import { matchQuery } from "@/ai/query";
-import { loadFacts } from "@/app/demo";
+import { matchQuery, type ShipmentFacts } from "@/ai/query";
+import { doneKey, loadFacts } from "@/app/demo";
 import { customerOf, SITES, siteOf } from "@/data";
 import { OPERATORS } from "@/domain/operators";
 import { hoursSinceUpdate } from "@/domain/timeline";
@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AutoSubmitSelect } from "./client-controls";
-import { ACTION_ICON, AiTag, EtaCell, ModeTrail, Pill, RiskBadge, StaleBadge, StatusBadge } from "./shipment-bits";
+import { ACTION_ICON, ActionControl, AiTag, EtaCell, ModeTrail, Pill, RiskBadge, StaleBadge, StatusBadge } from "./shipment-bits";
 
 export type DashboardParams = { q?: string; site?: string; op?: string; view?: string };
 
@@ -23,7 +23,17 @@ const href = (params: DashboardParams) => {
   return qs.size ? `/?${qs}` : "/";
 };
 
-export async function OpsDashboard({ user, shipments, params }: { user: Extract<User, { role: "ops" }>; shipments: TrackedShipment[]; params: DashboardParams }) {
+export async function OpsDashboard({
+  user,
+  shipments,
+  params,
+  done,
+}: {
+  user: Extract<User, { role: "ops" }>;
+  shipments: TrackedShipment[];
+  params: DashboardParams;
+  done: string[];
+}) {
   const [facts, summary, query] = await Promise.all([
     Promise.all(shipments.map(loadFacts)),
     ai.summarizeDay(shipments),
@@ -33,12 +43,18 @@ export async function OpsDashboard({ user, shipments, params }: { user: Extract<
   const filtered = facts
     .filter((f) => !params.site || f.shipment.originSiteId === params.site)
     .filter((f) => !params.op || f.shipment.legs.some((l) => l.operatorId === params.op));
-  const attention = filtered.filter((f) => f.risk.level !== "low");
+  const actions = new Map(await Promise.all(filtered.map(async (f) => [f.shipment.id, await ai.suggestNextAction(f.shipment, f.risk)] as const)));
+  const handled = (f: ShipmentFacts) => done.includes(doneKey(f.shipment.id, actions.get(f.shipment.id)!.kind));
+  // Managing by exception: once ops has acted on the proposed action, the shipment leaves the queue until something new happens.
+  const atRisk = filtered.filter((f) => f.risk.level !== "low");
+  const attention = atRisk.filter((f) => !handled(f));
+  const handledCount = atRisk.length - attention.length;
   const view = query ? "search" : params.view === "all" ? "all" : "attention";
-  const rows = (query ? filtered.filter((f) => matchQuery(query, f)) : view === "all" ? filtered : attention).sort(
+  const matches = query ? filtered.filter((f) => matchQuery(query, f)) : [];
+  const rows = (query ? matches : view === "all" ? filtered : attention).sort(
     (a, b) => b.risk.score - a.risk.score || a.eta.expected.localeCompare(b.eta.expected),
   );
-  const actions = await Promise.all(rows.map((f) => ai.suggestNextAction(f.shipment, f.risk)));
+  const answer = query ? await ai.answerQuery(query, matches) : null;
 
   const sites = SITES.filter((s) => user.siteIds.includes(s.id));
   const operatorIds = [...new Set(shipments.flatMap((s) => s.legs.map((l) => l.operatorId)))] as OperatorId[];
@@ -124,7 +140,21 @@ export async function OpsDashboard({ user, shipments, params }: { user: Extract<
                 <X className="size-3" /> Clear
               </Link>
             </div>
-          ) : (
+          ) : null}
+          {answer && (
+            <div className="flex gap-3 rounded-lg border border-violet-200 bg-violet-50/60 p-3 text-sm" data-testid="query-answer">
+              <Sparkles className="mt-0.5 size-4 shrink-0 text-violet-600" />
+              <div className="space-y-1">
+                <p className="text-slate-800">{answer.text}</p>
+                {answer.shipmentId && (
+                  <Link href={`/shipments/${answer.shipmentId}`} className="text-xs font-medium text-violet-800 hover:underline">
+                    Open shipment →
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+          {!query && (
             <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
               Try:
               {EXAMPLES.map((e) => (
@@ -146,6 +176,11 @@ export async function OpsDashboard({ user, shipments, params }: { user: Extract<
               <Link href={href({ site: params.site, op: params.op })} className={cn("-mb-px pb-2", view === "attention" ? "border-b-2 border-slate-900 font-medium" : "text-muted-foreground")}>
                 Needs attention ({attention.length})
               </Link>
+              {handledCount > 0 && (
+                <span className="-mb-px pb-2 text-xs text-emerald-700" data-testid="handled-count">
+                  {handledCount} handled today
+                </span>
+              )}
               <Link href={href({ site: params.site, op: params.op, view: "all" })} className={cn("-mb-px pb-2", view === "all" ? "border-b-2 border-slate-900 font-medium" : "text-muted-foreground")}>
                 All shipments ({filtered.length})
               </Link>
@@ -169,9 +204,9 @@ export async function OpsDashboard({ user, shipments, params }: { user: Extract<
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((f, i) => {
+              {rows.map((f) => {
                 const s = f.shipment;
-                const action = actions[i];
+                const action = actions.get(s.id)!;
                 const Icon = ACTION_ICON[action.kind];
                 return (
                   <TableRow key={s.id} className="align-top" data-testid={`row-${s.id}`}>
@@ -186,12 +221,13 @@ export async function OpsDashboard({ user, shipments, params }: { user: Extract<
                         {s.orderRef} · {customerOf(s).name}
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="max-w-64 text-sm whitespace-normal">
                       <div>
                         {siteOf(s).place.name} → {customerOf(s).place.name}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <ModeTrail legs={s.legs} /> {[...new Set(s.legs.map((l) => OPERATORS[l.operatorId].name))].join(", ")}
+                      <div className="mt-0.5 space-y-0.5 text-xs text-muted-foreground">
+                        <ModeTrail legs={s.legs} />
+                        <div>{[...new Set(s.legs.map((l) => OPERATORS[l.operatorId].name))].join(", ")}</div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -203,14 +239,21 @@ export async function OpsDashboard({ user, shipments, params }: { user: Extract<
                     <TableCell>
                       <EtaCell eta={f.eta} delivered={f.status === "delivered"} stale={f.stale} />
                     </TableCell>
-                    <TableCell className="max-w-64 pr-4 whitespace-normal">
+                    <TableCell className="max-w-52 pr-4 whitespace-normal">
                       {action.kind === "none" ? (
-                        <span className="text-xs text-muted-foreground">No action needed</span>
+                        <span className="flex gap-2 text-sm text-muted-foreground">
+                          <Icon className="mt-0.5 size-4 shrink-0 text-emerald-600" /> No action needed
+                        </span>
                       ) : (
-                        <Link href={`/shipments/${s.id}`} className="group flex gap-2 text-sm">
-                          <Icon className="mt-0.5 size-4 shrink-0 text-violet-600" />
-                          <span className="group-hover:underline">{action.label}</span>
-                        </Link>
+                        <div className="space-y-1.5">
+                          <Link href={`/shipments/${s.id}`} className="group flex gap-2 text-sm">
+                            <Icon className="mt-0.5 size-4 shrink-0 text-violet-600" />
+                            <span className="group-hover:underline">{action.label}</span>
+                          </Link>
+                          <div className="pl-6">
+                            <ActionControl shipmentId={s.id} action={action} done={handled(f)} compact />
+                          </div>
+                        </div>
                       )}
                     </TableCell>
                   </TableRow>
@@ -219,7 +262,7 @@ export async function OpsDashboard({ user, shipments, params }: { user: Extract<
               {rows.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                    {view === "attention" ? "Nothing needs attention. Every shipment is on track." : "No shipments match."}
+                    {view !== "attention" ? "No shipments match." : handledCount ? "Nothing left to act on: every shipment at risk has been handled." : "Nothing needs attention. Every shipment is on track."}
                   </TableCell>
                 </TableRow>
               )}

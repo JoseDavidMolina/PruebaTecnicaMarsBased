@@ -3,9 +3,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SIMULATED_UPDATES, USERS } from "@/data";
-import { SIM_COOKIE, USER_COOKIE } from "./demo";
+import { ACTION_KINDS, type ActionKind, doneKey, DONE_COOKIE, getDemo, SIM_COOKIE, USER_COOKIE } from "./demo";
 
 // Inputs are checked against the known ids: Server Actions are reachable by direct POST.
+
+const list = (value: string | undefined) => (value ?? "").split(",").filter(Boolean);
 
 export async function switchUser(formData: FormData) {
   const id = String(formData.get("userId"));
@@ -17,10 +19,25 @@ export async function simulateUpdate(formData: FormData) {
   const id = String(formData.get("shipmentId"));
   if (!(id in SIMULATED_UPDATES)) return;
   const jar = await cookies();
-  const current = (jar.get(SIM_COOKIE)?.value ?? "").split(",").filter(Boolean);
+  const current = list(jar.get(SIM_COOKIE)?.value);
   if (!current.includes(id)) jar.set(SIM_COOKIE, [...current, id].join(","));
+  // New operator information reopens the case: what ops did before may no longer apply.
+  jar.set(DONE_COOKIE, list(jar.get(DONE_COOKIE)?.value).filter((k) => !k.startsWith(`${id}:`)).join(","));
+}
+
+/** Ops completes the proposed next action. Only for an ops user, on a shipment inside their perimeter. */
+export async function completeAction(formData: FormData) {
+  const id = String(formData.get("shipmentId"));
+  const kind = String(formData.get("kind")) as ActionKind;
+  const { user, shipments } = await getDemo();
+  if (user.role !== "ops" || !ACTION_KINDS.includes(kind) || !shipments.some((s) => s.id === id)) return;
+  const jar = await cookies();
+  const current = list(jar.get(DONE_COOKIE)?.value);
+  if (!current.includes(doneKey(id, kind))) jar.set(DONE_COOKIE, [...current, doneKey(id, kind)].join(","));
 }
 
 export async function resetDemo() {
-  (await cookies()).delete(SIM_COOKIE);
+  const jar = await cookies();
+  jar.delete(SIM_COOKIE);
+  jar.delete(DONE_COOKIE);
 }

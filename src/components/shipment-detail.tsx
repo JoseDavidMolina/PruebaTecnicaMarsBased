@@ -1,20 +1,21 @@
 import Link from "next/link";
-import { ArrowLeft, FileText, Radio, RefreshCw, Sparkles, TriangleAlert } from "lucide-react";
+import { ArrowLeft, CircleCheck, FileText, Radio, RefreshCw, Sparkles, TriangleAlert } from "lucide-react";
 import { ai } from "@/ai";
 import type { ShipmentFacts } from "@/ai/query";
-import type { EtaPrediction } from "@/ai/types";
+import type { EtaPrediction, MappingSuggestion } from "@/ai/types";
 import { simulateUpdate } from "@/app/actions";
+import { doneKey } from "@/app/demo";
 import { customerOf, SIMULATED_UPDATES, siteOf } from "@/data";
 import { OPERATORS } from "@/domain/operators";
-import { hoursSinceUpdate, unifiedTimeline } from "@/domain/timeline";
+import { hoursSinceUpdate, lastMilestone, unifiedTimeline } from "@/domain/timeline";
 import { DOCUMENT_LABELS, type Leg, type Milestone, type TrackedShipment } from "@/domain/types";
-import { DEMO_NOW, formatDateTime } from "@/lib/clock";
+import { DEMO_NOW, formatDateTime, formatDuration } from "@/lib/clock";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubmitButton } from "./client-controls";
 import { DeliveryMap } from "./delivery-map-loader";
 import {
-  ACTION_ICON, AiTag, ConfidenceMeter, DelayNote, etaText, MODE_ICON, ModeTrail, Pill, ReliabilityBadge, RiskBadge, StaleBadge, STATUS, StatusBadge,
+  ACTION_ICON, ActionControl, AiTag, ConfidenceMeter, DelayNote, etaText, MODE_ICON, ModeTrail, Pill, ReliabilityBadge, RiskBadge, StaleBadge, STATUS, StatusBadge,
 } from "./shipment-bits";
 
 type Variant = "ops" | "customer";
@@ -41,7 +42,19 @@ function LegHeader({ leg, variant }: { leg: Leg; variant: Variant }) {
 }
 
 /** Solid dot = happened. Hollow dot = still to come (dashed when it is only our estimate). */
-function TimelineItem({ m, title, sub, upcoming = false }: { m: Pick<Milestone, "reliability" | "at">; title: string; sub?: React.ReactNode; upcoming?: boolean }) {
+function TimelineItem({
+  m,
+  title,
+  sub,
+  upcoming = false,
+  children,
+}: {
+  m: Pick<Milestone, "reliability" | "at">;
+  title: string;
+  sub?: React.ReactNode;
+  upcoming?: boolean;
+  children?: React.ReactNode;
+}) {
   const estimated = m.reliability === "estimated";
   return (
     <li className="relative pb-5 pl-8">
@@ -56,25 +69,70 @@ function TimelineItem({ m, title, sub, upcoming = false }: { m: Pick<Milestone, 
         {(estimated || upcoming) && <ReliabilityBadge reliability={m.reliability} />}
       </div>
       <div className="text-xs text-muted-foreground">{sub}</div>
+      {children}
     </li>
   );
 }
 
-export function Timeline({ shipment, eta, variant }: { shipment: TrackedShipment; eta: EtaPrediction; variant: Variant }) {
+/** Ops traceability: which operator said it, exactly how, and the ETA they gave. */
+function OperatorTrace({ m }: { m: Milestone }) {
+  return (
+    <>
+      {" · "}
+      {OPERATORS[m.operatorId].name}
+      <span
+        className={cn("ml-2 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600", m.status === "unknown" && "bg-amber-100 text-amber-900")}
+        title="Exactly what the operator sent, before normalization"
+      >
+        {m.rawStatus}
+      </span>
+      {m.eta && ` · operator ETA ${formatDateTime(m.eta.latest)}`}
+    </>
+  );
+}
+
+/** Consecutive reports of the same status on the same leg ("At sea" x3) become one step. Unknown codes never merge. */
+function groupRepeats(items: Milestone[]): Milestone[][] {
+  const groups: Milestone[][] = [];
+  for (const m of items) {
+    const group = groups.at(-1);
+    const prev = group?.at(-1);
+    const repeat = prev && prev.legId === m.legId && prev.status === m.status && m.status !== "unknown" && prev.reliability === "confirmed" && m.reliability === "confirmed";
+    if (repeat) group!.push(m);
+    else groups.push([m]);
+  }
+  return groups;
+}
+
+export function Timeline({
+  shipment,
+  eta,
+  variant,
+  suggestions = {},
+}: {
+  shipment: TrackedShipment;
+  eta: EtaPrediction;
+  variant: Variant;
+  suggestions?: Record<string, MappingSuggestion>; // by milestone id
+}) {
   let items = unifiedTimeline(shipment);
   if (variant === "customer") {
     // Customers get the story, not the plumbing: no unrecognised codes, no repeated statuses.
     items = items.filter((m, i, all) => m.status !== "unknown" && m.status !== all[i - 1]?.status);
   }
+  const groups = groupRepeats(items);
   const delivered = shipment.milestones.some((m) => m.status === "delivered" && m.legId === shipment.legs.at(-1)!.id);
   const legOf = (m: Milestone) => shipment.legs.find((l) => l.id === m.legId)!;
 
   return (
     <ol className="relative before:absolute before:top-2 before:bottom-6 before:left-[10px] before:w-px before:bg-slate-200">
-      {items.map((m, i) => {
+      {groups.map((group, i) => {
+        const m = group.at(-1)!; // the latest report carries the freshest details
+        const earlier = group.slice(0, -1);
         const leg = legOf(m);
-        const newLeg = i === 0 || items[i - 1].legId !== m.legId;
+        const newLeg = i === 0 || groups[i - 1][0].legId !== m.legId;
         const planned = m.reliability === "estimated";
+        const suggestion = suggestions[m.id];
         return (
           <FragmentWithLeg key={m.id} leg={newLeg && shipment.legs.length > 1 ? leg : undefined} variant={variant}>
             <TimelineItem
@@ -88,22 +146,37 @@ export function Timeline({ shipment, eta, variant }: { shipment: TrackedShipment
                       : `Planned for ${formatDateTime(m.at)} from ${leg.from.name}`
                     : formatDateTime(m.at)}
                   {!planned && m.location && ` · ${m.location}`}
-                  {variant === "ops" && !planned && (
-                    <>
-                      {" · "}
-                      {OPERATORS[m.operatorId].name}
-                      <span
-                        className={cn("ml-2 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600", m.status === "unknown" && "bg-amber-100 text-amber-900")}
-                        title="Exactly what the operator sent, before normalization"
-                      >
-                        {m.rawStatus}
-                      </span>
-                    </>
-                  )}
-                  {variant === "ops" && m.eta && !planned && ` · operator ETA ${formatDateTime(m.eta.latest)}`}
+                  {variant === "ops" && !planned && <OperatorTrace m={m} />}
                 </>
               }
-            />
+            >
+              {variant === "ops" && earlier.length > 0 && (
+                <details className="mt-1 text-xs text-muted-foreground">
+                  <summary className="cursor-pointer hover:text-foreground">
+                    {earlier.length} earlier {earlier.length === 1 ? "update" : "updates"} with the same status
+                  </summary>
+                  <ul className="mt-1 space-y-1 border-l pl-3">
+                    {earlier.map((e) => (
+                      <li key={e.id}>
+                        {formatDateTime(e.at)}
+                        {e.location && ` · ${e.location}`}
+                        <OperatorTrace m={e} />
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+              {variant === "ops" && suggestion && (
+                <div className="mt-1.5 flex gap-2 rounded-md border border-violet-200 bg-violet-50/60 p-2 text-xs text-slate-700" data-testid="mapping-suggestion">
+                  <Sparkles className="mt-0.5 size-3.5 shrink-0 text-violet-600" />
+                  <span>
+                    <span className="font-medium">Likely meaning: </span>
+                    {suggestion.meaning} → {STATUS[suggestion.status].label} ({suggestion.confidence} confidence). Not applied until{" "}
+                    {OPERATORS[m.operatorId].name} confirms it.
+                  </span>
+                </div>
+              )}
+            </TimelineItem>
           </FragmentWithLeg>
         );
       })}
@@ -234,6 +307,8 @@ function MapCard({ shipment }: { shipment: TrackedShipment }) {
 
 function Header({ facts, variant }: { facts: ShipmentFacts; variant: Variant }) {
   const s = facts.shipment;
+  const last = lastMilestone(s);
+  const source = variant === "ops" && last ? `update from ${OPERATORS[last.operatorId].name}` : "carrier update";
   return (
     <div className="space-y-3">
       <Link href="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -250,14 +325,23 @@ function Header({ facts, variant }: { facts: ShipmentFacts; variant: Variant }) 
         {siteOf(s).name} → {customerOf(s).place.name} ({customerOf(s).place.country})
         <ModeTrail legs={s.legs} />
       </p>
+      {/* Freshness is always visible: how old is what we are showing? */}
+      <p className="text-xs text-muted-foreground" data-testid="freshness">
+        {last ? `Last ${source}: ${formatDateTime(last.at)} (${formatDuration(hoursSinceUpdate(s) ?? 0)} ago)` : "No update from the carrier yet"}
+      </p>
     </div>
   );
 }
 
-export async function OpsShipmentDetail({ facts, applied }: { facts: ShipmentFacts; applied: boolean }) {
+export async function OpsShipmentDetail({ facts, applied, done }: { facts: ShipmentFacts; applied: boolean; done: string[] }) {
   const s = facts.shipment;
-  const [action, notice] = await Promise.all([ai.suggestNextAction(s, facts.risk), ai.customerNotice(s, facts.eta)]);
+  const [action, notice, suggestions] = await Promise.all([
+    ai.suggestNextAction(s, facts.risk),
+    ai.customerNotice(s, facts.eta),
+    Promise.all(s.milestones.map(async (m) => [m.id, await ai.suggestMapping(m)] as const)),
+  ]);
   const Icon = ACTION_ICON[action.kind];
+  const noticeSent = done.includes(doneKey(s.id, "notify_customer"));
   const outForDelivery = facts.status === "out_for_delivery" && s.positions;
 
   return (
@@ -275,7 +359,12 @@ export async function OpsShipmentDetail({ facts, applied }: { facts: ShipmentFac
               </p>
             </CardHeader>
             <CardContent>
-              <Timeline shipment={s} eta={facts.eta} variant="ops" />
+              <Timeline
+                shipment={s}
+                eta={facts.eta}
+                variant="ops"
+                suggestions={Object.fromEntries(suggestions.filter((e): e is readonly [string, MappingSuggestion] => e[1] !== null))}
+              />
               {s.invalidEvents.length > 0 && (
                 <p className="mt-2 flex items-center gap-2 text-xs text-amber-800">
                   <TriangleAlert className="size-4" /> {s.invalidEvents.length} operator message(s) could not be read and were not used.
@@ -309,6 +398,9 @@ export async function OpsShipmentDetail({ facts, applied }: { facts: ShipmentFac
                   <Icon className="mt-0.5 size-4 shrink-0 text-violet-700" /> {action.label}
                 </div>
                 {action.rationale && <p className="mt-1 text-sm text-slate-700">{action.rationale}</p>}
+                <div className="mt-3">
+                  <ActionControl shipmentId={s.id} action={action} done={done.includes(doneKey(s.id, action.kind))} />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -316,7 +408,14 @@ export async function OpsShipmentDetail({ facts, applied }: { facts: ShipmentFac
           <Card size="sm">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                What the customer sees <AiTag label="Drafted" />
+                What the customer sees{" "}
+                {notice && noticeSent ? (
+                  <Pill tone="green">
+                    <CircleCheck /> Sent
+                  </Pill>
+                ) : (
+                  <AiTag label="Drafted" />
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>

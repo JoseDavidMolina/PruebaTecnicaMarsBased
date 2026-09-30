@@ -4,12 +4,12 @@ import { getDemo, loadFacts } from "../../demo";
 
 export default async function ShipmentPage(props: PageProps<"/shipments/[id]">) {
   const { id } = await props.params;
-  const { user, shipments, simulated } = await getDemo();
+  const { user, shipments, simulated, done } = await getDemo();
   // Outside the user's perimeter looks exactly like not existing.
   const shipment = shipments.find((s) => s.id === id);
   if (!shipment) notFound();
 
   const facts = await loadFacts(shipment);
   const applied = simulated.includes(id);
-  return user.role === "ops" ? <OpsShipmentDetail facts={facts} applied={applied} /> : <CustomerShipmentDetail facts={facts} applied={applied} />;
+  return user.role === "ops" ? <OpsShipmentDetail facts={facts} applied={applied} done={done} /> : <CustomerShipmentDetail facts={facts} applied={applied} />;
 }

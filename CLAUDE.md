@@ -47,7 +47,7 @@ src/domain/             deterministic rules (not AI)
 src/ai/                 everything "AI"
   types.ts              Zod schemas for every AI output (types inferred from them)
   eta.ts risk.ts query.ts   pure mock logic: ETA with range/confidence, risk score/flags/reasons, NL query parser + matcher
-  service.ts            AiService interface + mockAiService; next action, daily summary, customer notice; factsFor()
+  service.ts            AiService interface + mockAiService; next action, daily summary, customer notice, search answer, code-mapping suggestion; factsFor()
 src/data/               synthetic data
   reference.ts          sites, customers, ports/hubs, demo users
   shipments.ts          20 shipments authored as raw payloads in each operator's native format, hours relative to DEMO_NOW;
@@ -55,8 +55,8 @@ src/data/               synthetic data
   index.ts              SHIPMENTS = RAW_SHIPMENTS.map(track); withSimulatedUpdate, getShipment, siteOf, customerOf
 src/ai/index.ts         `ai`: the single AiService instance the UI uses (swap point)
 src/app/
-  demo.ts               getDemo(): user + simulated ids from cookies → perimeter-filtered shipments; loadFacts() via `ai`
-  actions.ts            Server Actions: switchUser, simulateUpdate, resetDemo (inputs checked against known ids)
+  demo.ts               getDemo(): user, simulated ids and completed actions from cookies → perimeter-filtered shipments; loadFacts() via `ai`
+  actions.ts            Server Actions: switchUser, simulateUpdate, completeAction, resetDemo (inputs checked against known ids and perimeter)
   page.tsx              "/" → OpsDashboard or CustomerHome by role; search/filters are URL params (q, site, op, view)
   shipments/[id]        detail by role; outside the perimeter → notFound()
 src/components/
@@ -66,7 +66,7 @@ src/components/
 e2e/demo.spec.ts        the demo script as a Playwright test
 ```
 
-Demo state is two cookies (`demo-user`, `demo-sim`). A Server Action that sets them re-renders the page, so there is no client-side store. Violet + sparkles marks AI output throughout the UI; keep that convention.
+Demo state is three cookies (`demo-user`, `demo-sim`, `demo-done`). Completing a proposed action takes the shipment out of the "Needs attention" queue until a new operator update reopens it; uploading a document flips it to available, which recomputes risk and the next action. A Server Action that sets them re-renders the page, so there is no client-side store. Violet + sparkles marks AI output throughout the UI; keep that convention.
 
 Data flow: raw operator events → Zod validation → `normalizeEvent` → `Milestone` (keeps `rawCode`/`rawStatus` next to the normalized `status`) → `TrackedShipment` → `factsFor` / `AiService` derive status, ETA, risk, next action and notices → UI.
 

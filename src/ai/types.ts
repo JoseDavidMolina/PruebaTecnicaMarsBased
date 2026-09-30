@@ -66,6 +66,18 @@ export const CustomerNoticeSchema = z.object({
   severity: z.enum(["info", "warning"]),
 });
 
+export const QueryAnswerSchema = z.object({
+  text: z.string(),
+  shipmentId: z.string().optional(), // set when the answer is about one shipment, to link to it
+});
+
+/** A proposed reading of an operator code we could not map. Shown as a suggestion, never applied to the status. */
+export const MappingSuggestionSchema = z.object({
+  status: z.enum(NORMALIZED_STATUSES).exclude(["unknown"]),
+  meaning: z.string(),
+  confidence: z.enum(["high", "medium", "low"]),
+});
+
 export type RiskFlag = z.infer<typeof RiskFlagSchema>;
 export type RiskAssessment = z.infer<typeof RiskAssessmentSchema>;
 export type EtaPrediction = z.infer<typeof EtaPredictionSchema>;
@@ -73,3 +85,5 @@ export type NextAction = z.infer<typeof NextActionSchema>;
 export type DailySummary = z.infer<typeof DailySummarySchema>;
 export type ShipmentQuery = z.infer<typeof ShipmentQuerySchema>;
 export type CustomerNotice = z.infer<typeof CustomerNoticeSchema>;
+export type QueryAnswer = z.infer<typeof QueryAnswerSchema>;
+export type MappingSuggestion = z.infer<typeof MappingSuggestionSchema>;

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getShipment, SHIPMENTS } from "@/data";
+import { getShipment, SHIPMENTS, withUploadedDocuments } from "@/data";
 import { predictEta } from "./eta";
 import { assessRisk } from "./risk";
-import { customerNotice, mockAiService, suggestNextAction, summarizeDay } from "./service";
+import { answerQuery, customerNotice, factsFor, mockAiService, suggestMapping, suggestNextAction, summarizeDay } from "./service";
 
 const action = (id: string) => {
   const s = getShipment(id)!;
@@ -57,6 +57,38 @@ describe("customerNotice", () => {
     expect(notice("shp-1004")?.title).toBe("Arriving today, 11:00–13:00"); // Europe/Madrid
     expect(notice("shp-1006")).toBeNull();
     expect(notice("shp-1005")).toBeNull();
+  });
+});
+
+describe("answerQuery", () => {
+  const facts = (ids: string[]) => ids.map((id) => factsFor(getShipment(id)!));
+
+  it("answers a question about one order from its facts, with the next step", () => {
+    const a = answerQuery(facts(["shp-1001"]));
+    expect(a.shipmentId).toBe("shp-1001");
+    expect(a.text).toMatch(/^SHP-1001 \(order PO-12345, Arvenza UK Ltd\) is held at customs\./);
+    expect(a.text).toContain("Missing: Commercial invoice.");
+    expect(a.text).toContain("Suggested next step: Upload commercial invoice.");
+  });
+
+  it("summarizes several matches and points at the most urgent", () => {
+    expect(answerQuery(facts(["shp-1006", "shp-1002", "shp-1003"])).text).toMatch(/^3 shipments match\. 2 need attention.*Most urgent: SHP-1002/);
+    expect(answerQuery([]).text).toMatch(/^No shipments match/);
+  });
+});
+
+describe("suggestMapping", () => {
+  it("proposes a reading for an unmapped code, and nothing for mapped ones", () => {
+    const s = getShipment("shp-1014")!;
+    expect(suggestMapping(s.milestones.at(-1)!)).toMatchObject({ status: "in_transit" });
+    expect(suggestMapping(s.milestones[0])).toBeNull();
+  });
+});
+
+describe("after ops uploads the missing invoice", () => {
+  it("moves on to the next blocker instead of asking again", () => {
+    const s = withUploadedDocuments(getShipment("shp-1001")!);
+    expect(suggestNextAction(s, assessRisk(s))).toMatchObject({ kind: "contact_operator", label: "Ask Transvolta Road Freight why customs is holding it" });
   });
 });
 

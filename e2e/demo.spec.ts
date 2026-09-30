@@ -16,6 +16,12 @@ test("operations: briefing, search, and an operator update that recalculates the
   await page.getByRole("button", { name: "Search" }).click();
   await expect(page.getByTestId("query-interpretation")).toContainText("Reference 12345");
   await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.getByTestId("query-answer")).toContainText("SHP-1001 (order PO-12345, Arvenza UK Ltd) is held at customs");
+
+  // Acting on the proposal: uploading the invoice moves the case on to its next blocker.
+  await page.goto("/shipments/shp-1001");
+  await page.getByTestId("next-action").getByRole("button", { name: "Upload" }).click();
+  await expect(page.getByTestId("next-action")).toContainText("Ask Transvolta Road Freight why customs is holding it");
 
   // Multimodal shipment delayed at port.
   await page.goto("/shipments/shp-1002");
@@ -26,6 +32,13 @@ test("operations: briefing, search, and an operator update that recalculates the
   await expect(page.getByText("Your shipment will arrive 12 hours later than planned")).toBeVisible();
   await expect(page.getByText("VAR · MXVER · MV Aurora Tide")).toBeVisible();
   await expect(page.getByRole("button", { name: "Reset demo" })).toBeVisible();
+
+  // Sending the notice takes the shipment out of the queue.
+  await page.getByTestId("next-action").getByRole("button", { name: "Send notice" }).click();
+  await expect(page.getByTestId("next-action")).toContainText("Notice sent");
+  await page.goto("/");
+  await expect(page.getByTestId("handled-count")).toHaveText("1 handled today");
+  await expect(page.getByTestId("row-shp-1002")).toHaveCount(0);
 });
 
 test("customer: own perimeter, proactive notices and the live delivery map", async ({ page }) => {

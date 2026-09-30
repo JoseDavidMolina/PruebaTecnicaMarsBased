@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const { user, simulated } = await getDemo();
+  const { user, simulated, done } = await getDemo();
   const ops = USERS.filter((u) => u.role === "ops");
   const customers = USERS.filter((u) => u.role === "customer");
 
@@ -37,7 +37,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               Demo clock · {formatDateTime(DEMO_NOW.toISOString())}
             </span>
             <div className="ml-auto flex items-center gap-2">
-              {simulated.length > 0 && (
+              {simulated.length + done.length > 0 && (
                 <form action={resetDemo}>
                   <SubmitButton pendingText="Resetting…" className="text-muted-foreground hover:bg-muted">
                     <RotateCcw /> Reset demo

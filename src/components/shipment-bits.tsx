@@ -1,5 +1,7 @@
 import { CircleCheck, CircleDashed, Clock, Mail, PhoneCall, Ship, Sparkles, Truck, Upload, type LucideIcon } from "lucide-react";
+import { completeAction } from "@/app/actions";
 import { cn } from "@/lib/utils";
+import { SubmitButton } from "./client-controls";
 import { DEMO_NOW, formatDate, formatDateRange, formatDateTime, formatDuration, formatTime, isSameDay } from "@/lib/clock";
 import { isLate } from "@/ai/eta";
 import type { EtaPrediction, NextAction, RiskAssessment } from "@/ai/types";
@@ -148,3 +150,35 @@ export const ACTION_ICON: Record<NextAction["kind"], LucideIcon> = {
   upload_document: Upload,
   none: CircleCheck,
 };
+
+const ACTION_BUTTON: Record<NextAction["kind"], { cta: string; pending: string; done: string }> = {
+  notify_customer: { cta: "Send notice", pending: "Sending…", done: "Notice sent" },
+  contact_operator: { cta: "Send request", pending: "Sending…", done: "Request sent" },
+  upload_document: { cta: "Upload", pending: "Uploading…", done: "Uploaded" },
+  none: { cta: "", pending: "", done: "" },
+};
+
+/** One click to carry out the proposed action, or proof that it was done. Demo: nothing leaves the app. */
+export function ActionControl({ shipmentId, action, done, compact = false }: { shipmentId: string; action: NextAction; done: boolean; compact?: boolean }) {
+  if (action.kind === "none") return null;
+  const b = ACTION_BUTTON[action.kind];
+  if (done) {
+    return (
+      <Pill tone="green" title="Demo: recorded here, nothing is sent outside the app">
+        <CircleCheck /> {b.done} · {formatTime(DEMO_NOW.toISOString())}
+      </Pill>
+    );
+  }
+  return (
+    <form action={completeAction}>
+      <input type="hidden" name="shipmentId" value={shipmentId} />
+      <input type="hidden" name="kind" value={action.kind} />
+      <SubmitButton
+        pendingText={b.pending}
+        className={cn("border border-violet-300 bg-white text-violet-800 hover:bg-violet-100", compact && "h-7 px-2 text-xs")}
+      >
+        {b.cta}
+      </SubmitButton>
+    </form>
+  );
+}
