@@ -4,7 +4,7 @@ Clickable prototype for the MarsBased technical test. It gives consolidated, rel
 
 Frontend only. All data is synthetic, and the AI is simulated with deterministic mock logic behind a real interface.
 
-The write-up (approach, where AI adds value, path to production) is here: _(link to be added)_.
+The write-up (approach, where AI adds value, path to production) was sent by email, alongside this repository.
 
 ## Run it
 
