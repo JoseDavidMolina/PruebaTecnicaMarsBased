@@ -53,21 +53,27 @@ const OPERATOR_ALIASES: Rule<OperatorId>[] = [
   [/\balpenwegs?\b/, "alpenweg", OPERATORS.alpenweg.name],
 ];
 
-/** True when a and b differ by exactly one inserted, deleted, replaced or swapped character. */
-function oneEdit(a: string, b: string): boolean {
-  if (a === b || Math.abs(a.length - b.length) > 1) return false;
+/** True when typed is name with one letter dropped or two neighbouring letters swapped. */
+function oneSlip(typed: string, name: string): boolean {
+  if (typed === name || typed.length > name.length || name.length - typed.length > 1) return false;
   let i = 0;
-  while (a[i] === b[i]) i++;
-  const [x, y] = [a.slice(i), b.slice(i)];
-  return x.slice(1) === y.slice(1) || x.slice(1) === y || x === y.slice(1) || (x[0] === y[1] && x[1] === y[0] && x.slice(2) === y.slice(2));
+  while (typed[i] === name[i]) i++;
+  const [x, y] = [typed.slice(i), name.slice(i)];
+  return x === y.slice(1) || (x[0] === y[1] && x[1] === y[0] && x.slice(2) === y.slice(2));
 }
 
-// Tolerates one typo in a country or operator name ("frnace"), only for words of 5+ letters to avoid false hits.
+// Tolerates one typo in a country or operator name ("frnace"), and the chip names the word it came from. Only a dropped or
+// swapped letter in a word of 6+ letters counts: a changed or added letter is how one real word becomes another
+// ("germane", "brutish", "trench"), and shorter words are too close to each other ("franc", "unite", "spin").
 const closeTo = <T>(rules: Rule<T>[], w: string) =>
-  w.length >= 5 ? rules.find(([re]) => keywords(re).some((keyword) => oneEdit(w, keyword))) : undefined;
+  w.length >= 6 ? rules.find(([re]) => keywords(re).some((keyword) => oneSlip(w, keyword))) : undefined;
 
-/** The plain words of a rule: /\b(france|french)\b/ → ["france", "french"]. */
-const keywords = (re: RegExp) => re.source.replace(/\\b|s\?/g, " ").match(/[a-z]{5,}/g) ?? [];
+/** The one-word names of a rule: /\b(uk|united kingdom|britain)\b/ → ["uk", "britain"]. "united" alone names no country ("untied"). */
+const keywords = (re: RegExp) =>
+  re.source
+    .replace(/\\b|s\?|[()]/g, "")
+    .split("|")
+    .filter((k) => /^[a-z]+$/.test(k));
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const word = (s: string) => new RegExp(`\\b${escape(s.toLowerCase())}\\b`);

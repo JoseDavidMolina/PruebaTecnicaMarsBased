@@ -58,6 +58,28 @@ describe("parseQuery", () => {
     expect(parseQuery("transvota").operatorIds).toEqual(["transvolta"]);
     expect(parseQuery("spin").countries).toEqual([]); // short words are never stretched to a name
   });
+
+  it.each([
+    ["frnace", "To France"],
+    ["alpenwg", "Alpenweg Logistik"],
+    ["transvola", "Transvolta Road Freight"],
+    ["mexcio", "To Mexico"],
+    ["portgual", "To Portugal"],
+    ["portugese", "To Portugal"],
+    ["britian", "To United Kingdom"],
+    ["meridain", "Blue Meridian Lines"],
+  ])("reads the typo '%s' as %s", (typo, label) => {
+    expect(parseQuery(`${typo} shipments`).interpretedAs).toEqual([`${label} (from '${typo}')`]);
+  });
+
+  // Real words one edit from a name, and short near-misses: never stretched to a country or operator.
+  it.each(["germane", "brutish", "trench", "wrench", "prance", "trance", "untied", "stain", "slain", "franc", "unite"])(
+    "leaves the real word '%s' alone",
+    (w) => {
+      const q = parseQuery(`${w} shipments`);
+      expect(q).toMatchObject({ countries: [], operatorIds: [], interpretedAs: [], unparsed: [w] });
+    },
+  );
 });
 
 describe("dateWindow", () => {
