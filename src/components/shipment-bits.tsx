@@ -51,7 +51,7 @@ export const STATUS: Record<NormalizedStatus, { label: string; tone: Tone }> = {
   on_vessel: { label: "At sea", tone: "blue" },
   customs_hold: { label: "Held at customs", tone: "red" },
   customs_cleared: { label: "Customs cleared", tone: "blue" },
-  out_for_delivery: { label: "Out for delivery", tone: "violet" },
+  out_for_delivery: { label: "Out for delivery", tone: "blue" },
   delivered: { label: "Delivered", tone: "green" },
   exception: { label: "Incident", tone: "red" },
   unknown: { label: "Unrecognised update", tone: "amber" },
@@ -195,7 +195,7 @@ export function ActionControl({
       <input type="hidden" name="kind" value={action.kind} />
       <SubmitButton
         pendingText={b.pending}
-        className={cn("border border-violet-300 bg-white text-violet-800 hover:bg-violet-100", compact && "h-7 px-2 text-xs")}
+        className={cn("bg-primary text-primary-foreground hover:bg-primary/90", compact && "h-7 px-2 text-xs")}
       >
         {b.cta}
       </SubmitButton>

@@ -106,7 +106,7 @@ export async function OpsDashboard({
               <Link
                 key={k.label}
                 href={k.href}
-                className="rounded-lg border bg-white px-3 py-2 transition-colors hover:border-violet-300 hover:bg-violet-50/50"
+                className="rounded-lg border bg-white px-3 py-2 transition-colors hover:border-foreground/30 hover:bg-muted"
               >
                 <div className={cn("text-xl font-semibold tabular-nums", k.value === 0 ? "text-muted-foreground" : k.tone)}>{k.value}</div>
                 <div className="text-xs text-muted-foreground">{k.label}</div>

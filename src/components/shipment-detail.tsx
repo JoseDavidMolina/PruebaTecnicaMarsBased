@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, CircleCheck, FileText, Radio, RefreshCw, Sparkles, TriangleAlert } from "lucide-react";
+import { ArrowLeft, CircleCheck, FileText, Info, Radio, RefreshCw, Sparkles, TriangleAlert } from "lucide-react";
 import { ai } from "@/ai";
 import type { ShipmentFacts } from "@/ai/query";
 import type { EtaPrediction, MappingSuggestion } from "@/ai/types";
@@ -250,7 +250,8 @@ export function EtaCard({ facts, variant }: { facts: ShipmentFacts; variant: Var
             Promised {formatDateTime(shipment.promisedDelivery)} {zoneName(shipment.promisedDelivery)}
           </span>
         </div>
-        {variant === "ops" && (
+        {/* A delivery is the operator's fact, not an estimate: nothing for the AI to explain. */}
+        {variant === "ops" && !delivered && (
           <p className="flex gap-2 rounded-md bg-slate-50 p-3 text-sm text-slate-700">
             <Sparkles className="mt-0.5 size-4 shrink-0 text-violet-600" />
             <span>
@@ -469,7 +470,7 @@ export async function OpsShipmentDetail({ facts, received, done }: { facts: Ship
                     <CircleCheck /> Sent
                   </Pill>
                 ) : (
-                  <AiTag label={notice?.severity === "info" ? "Automatic" : "Drafted"} />
+                  notice && <AiTag label={notice.severity === "info" ? "Automatic" : "Drafted"} />
                 )}
               </CardTitle>
             </CardHeader>
@@ -562,7 +563,7 @@ export function NoticeBanner({ notice, href }: { notice: { title: string; body: 
       {notice.severity === "warning" ? (
         <TriangleAlert className="mt-0.5 size-5 shrink-0 text-amber-700" />
       ) : (
-        <Sparkles className="mt-0.5 size-5 shrink-0 text-sky-700" />
+        <Info className="mt-0.5 size-5 shrink-0 text-sky-700" />
       )}
       <div>
         <div className="font-medium">{notice.title}</div>
