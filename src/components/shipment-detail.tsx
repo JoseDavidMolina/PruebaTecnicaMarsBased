@@ -258,7 +258,16 @@ function DocumentsCard({ shipment, variant }: { shipment: TrackedShipment; varia
               {d.status === "missing" ? (
                 <Pill tone={variant === "ops" ? "red" : "neutral"}>{variant === "ops" ? "Missing" : "Pending"}</Pill>
               ) : (
-                <span className="text-xs text-muted-foreground">PDF</span>
+                // Demo: every available document opens the same synthetic placeholder.
+                <a
+                  href="/demo-document.pdf"
+                  target="_blank"
+                  rel="noopener"
+                  aria-label={`Open ${DOCUMENT_LABELS[d.kind]} (demo)`}
+                  className="text-xs font-medium text-slate-700 underline-offset-2 hover:underline"
+                >
+                  PDF
+                </a>
               )}
             </li>
           ))}

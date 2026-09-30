@@ -84,6 +84,7 @@ test("customer: own perimeter, proactive notices and the reported delivery route
   await expect(page.getByTestId("eta-main")).toHaveText("Today, 09:00–11:00 CEST");
   await expect(page.getByText("Confirmed").first()).toBeVisible();
   await expect(page.locator(".leaflet-container")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open Packing list (demo)" })).toHaveAttribute("href", "/demo-document.pdf");
   await expect(page.getByTestId("map-source")).toHaveText("Reported by Tarnwick Parcel at 7 Oct, 08:50 CEST. Shown only while out for delivery.");
 
   // Another customer's shipment does not exist for Claire.
