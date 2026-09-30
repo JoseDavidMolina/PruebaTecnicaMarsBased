@@ -124,7 +124,7 @@ export const MODE_ICON = { road: Truck, sea: Ship } satisfies Record<Leg["mode"]
 
 export function ModeTrail({ legs }: { legs: Leg[] }) {
   return (
-    <span className="inline-flex items-center gap-1 text-muted-foreground" aria-label={legs.map((l) => l.mode).join(" then ")}>
+    <span role="img" className="inline-flex items-center gap-1 text-muted-foreground" aria-label={legs.map((l) => l.mode).join(" then ")}>
       {legs.map((l) => {
         const Icon = MODE_ICON[l.mode];
         return <Icon key={l.id} className="size-3.5" />;

@@ -111,3 +111,16 @@ test("nothing scrolls sideways at 390 px, with the full header showing", async (
     expect(scroll, `${user} ${path}`).toBe(client);
   }
 });
+
+test("keyboard users browse a filter with the arrow keys and apply it with Enter", async ({ page }) => {
+  await page.goto("/");
+  const site = page.getByLabel("Origin site");
+  await site.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(site).toHaveValue("site-zgz");
+  await page.waitForTimeout(500); // an auto-submit would have navigated by now
+  expect(new URL(page.url()).search).toBe("");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/site=site-zgz/);
+  await expect(page.getByText("· Zaragoza Plant only")).toBeVisible();
+});
