@@ -39,9 +39,11 @@ Do not add dependencies without asking the user first. Installed stack: Next.js 
 ```
 src/lib/clock.ts        DEMO_NOW (2026-10-07T07:00Z): the only "now". Never use new Date()/Date.now() for business logic.
                         Formatters use a fixed Europe/Madrid zone so output is machine-independent.
+                        startOfDay() = Madrid calendar day ("today", "this week"); zonedParts/fromZoned convert local wall-clock times (Intl, DST-aware).
 src/domain/             deterministic rules (not AI)
   types.ts              entity types (plain TS). ShipmentDocument, not Document (clashes with the DOM global)
-  operators.ts          4 fictional operators: per-operator raw Zod schema, code→status map, normalizeEvent()
+  operators.ts          4 fictional operators: per-operator raw Zod schema, code→status map, normalizeEvent().
+                        Formats without an offset (Tarnwick, Alpenweg) are read in the operator's timeZone.
   timeline.ts           track(): raw events → TrackedShipment; currentStatus, activeLeg, reportedEta, isStale, unifiedTimeline
   perimeter.ts          visibleShipments(user, shipments)
 src/ai/                 everything "AI"
@@ -62,11 +64,11 @@ src/app/
 src/components/
   shipment-bits.tsx     shared status/reliability/confidence/risk/ETA presentation (Pill, STATUS labels, etaText)
   ops-dashboard.tsx, customer-home.tsx, shipment-detail.tsx   the screens (Server Components)
-  client-controls.tsx, delivery-map*.tsx                       the only client components
+  client-controls.tsx, delivery-map*.tsx                       the only client components (LiveRefresh: ops header, router.refresh() every 60 s; off with LIVE_REFRESH=off, set by Playwright)
 e2e/demo.spec.ts        the demo script as a Playwright test
 ```
 
-Demo state is three cookies (`demo-user`, `demo-sim`, `demo-done`). Completing a proposed action takes the shipment out of the "Needs attention" queue until a new operator update reopens it; uploading a document flips it to available, which recomputes risk and the next action. A Server Action that sets them re-renders the page, so there is no client-side store. Violet + sparkles marks AI output throughout the UI; keep that convention.
+Demo state is three cookies (`demo-user`, `demo-sim`, `demo-done`). Completing a proposed action takes the shipment out of the "Needs attention" queue until a new operator update reopens it; uploading a document flips it to available, which recomputes risk and the next action. A customer sees a `warning` notice only after ops sent it (`noticeForCustomer` in demo.ts); `info` notices are automatic. A Server Action that sets them re-renders the page, so there is no client-side store. Violet + sparkles marks AI output throughout the UI; keep that convention.
 
 Data flow: raw operator events → Zod validation → `normalizeEvent` → `Milestone` (keeps `rawCode`/`rawStatus` next to the normalized `status`) → `TrackedShipment` → `factsFor` / `AiService` derive status, ETA, risk, next action and notices → UI.
 
