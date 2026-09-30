@@ -7,7 +7,7 @@ import type { EtaPrediction } from "./types";
 /** An ETA this far past the promised date counts as late. */
 export const LATE_AFTER_HOURS = 2;
 
-// ponytail: fixed heuristics standing in for a model trained on historical transit times per lane/operator.
+// NOTE(simplification): fixed heuristics standing in for a model trained on historical transit times per lane/operator.
 const LEG_UNCERTAINTY_HOURS: Record<Mode, number> = { road: 4, sea: 24 };
 const CUSTOMS_HOLD_HOURS = 48;
 const EXCEPTION_HOURS = 24;

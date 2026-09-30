@@ -5,7 +5,7 @@ import { DOCUMENT_LABELS, type TrackedShipment } from "@/domain/types";
 import { isLate, predictEta } from "./eta";
 import type { EtaPrediction, RiskAssessment, RiskFlag } from "./types";
 
-// ponytail: hand-tuned weights standing in for a model trained on past incidents; keep them here so they are easy to tune.
+// NOTE(simplification): hand-tuned weights standing in for a model trained on past incidents; keep them here so they are easy to tune.
 const WEIGHTS = { customs_hold: 45, exception: 40, stale: 35, port_delay: 30, missing_document: 15, unrecognised_update: 15, low_confidence: 10 };
 
 /** Hours the sea leg is behind its plan, by the carrier's own ETA or by the clock. */

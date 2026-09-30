@@ -70,7 +70,7 @@ export const ALPENWEG_CODES: Record<string, NormalizedStatus> = {
 // --- Raw payload schemas (trust boundary) -------------------------------------
 
 // Tarnwick and Alpenweg send local wall-clock times without an offset: read them in the operator's time zone.
-// ponytail: one zone per operator; a feed spanning several zones would need the zone of each depot.
+// NOTE(simplification): one zone per operator; a feed spanning several zones would need the zone of each depot.
 const dmyHm = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
 const compact = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/;
 

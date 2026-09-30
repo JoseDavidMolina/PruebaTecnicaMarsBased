@@ -75,7 +75,7 @@ Data flow: raw operator events → Zod validation → `normalizeEvent` → `Mile
 - Simulating an operator update is `track({ ...s, events: [...s.events, SIMULATED_UPDATES[s.id]] })`; everything downstream is recomputed.
 - Normalization is contextual: operators report per leg, so `delivered` on a non-final leg becomes a handover (`at_port`/`in_transit`) in `track()`. Malformed payloads land in `invalidEvents` instead of being dropped silently.
 - Tests pin the demo: `src/data/index.test.ts`, `risk.test.ts` and `service.test.ts` assert the hero scenarios, the risk ranking and the exact ops headline. Changing mock data or heuristics will intentionally break them; update the expectations on purpose.
-- `ponytail:` comments mark deliberate simplifications and their upgrade path.
+- `NOTE(simplification):` comments mark deliberate simplifications and their upgrade path.
 
 ## Principles (non-negotiable)
 

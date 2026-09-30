@@ -238,7 +238,7 @@ export function answerQuery(query: ShipmentQuery, matches: ShipmentFacts[]): Que
   return { text };
 }
 
-// ponytail: a tiny glossary standing in for an LLM reading the operator's own wording. It only suggests;
+// NOTE(simplification): a tiny glossary standing in for an LLM reading the operator's own wording. It only suggests;
 // a person confirms the mapping before it changes any status.
 const GLOSSARY: [RegExp, Exclude<NormalizedStatus, "unknown">, string][] = [
   [/umladung|umschlag/i, "in_transit", "Transshipment: the goods are being moved between vehicles at a hub"],

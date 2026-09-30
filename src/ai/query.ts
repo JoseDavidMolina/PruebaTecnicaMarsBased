@@ -5,7 +5,7 @@ import { CUSTOMERS, SITES } from "@/data/reference";
 import { isLate } from "./eta";
 import type { EtaPrediction, RiskAssessment, ShipmentQuery } from "./types";
 
-// ponytail: keyword grammar standing in for an LLM call that returns the same ShipmentQuery JSON.
+// NOTE(simplification): keyword grammar standing in for an LLM call that returns the same ShipmentQuery JSON.
 // The contract (schema + chips + unparsed words) stays the same when the parser is swapped.
 
 type Rule<T> = [pattern: RegExp, value: T, chip: string];
