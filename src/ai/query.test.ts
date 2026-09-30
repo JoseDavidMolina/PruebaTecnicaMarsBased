@@ -38,6 +38,26 @@ describe("parseQuery", () => {
   it("reports the words it did not understand instead of guessing", () => {
     expect(parseQuery("shipments to Narnia by dragon").unparsed).toEqual(["narnia", "dragon"]);
   });
+
+  it("understands plural modes and treats filler words as filler", () => {
+    expect(parseQuery("trucks from Zaragoza")).toMatchObject({ mode: "road", siteIds: ["site-zgz"], unparsed: [] });
+    expect(parseQuery("vessels").mode).toBe("sea");
+    expect(parseQuery("ships arriving next week")).toMatchObject({ mode: "sea", unparsed: [] });
+    expect(parseQuery("shipments that are due today").unparsed).toEqual([]);
+  });
+
+  it("reads 'not late' as on time, not as late", () => {
+    expect(parseQuery("not late").flags).toEqual(["on_time"]);
+    expect(parseQuery("on schedule").flags).toEqual(["on_time"]);
+  });
+
+  it("tolerates one typo in a country or operator name and says so in the chip", () => {
+    const q = parseQuery("shipmnts to Frnace runing late");
+    expect(q).toMatchObject({ countries: ["FR"], flags: ["late"], unparsed: ["shipmnts", "runing"] });
+    expect(q.interpretedAs).toContain("To France (from 'frnace')");
+    expect(parseQuery("transvota").operatorIds).toEqual(["transvolta"]);
+    expect(parseQuery("spin").countries).toEqual([]); // short words are never stretched to a name
+  });
 });
 
 describe("dateWindow", () => {
@@ -67,5 +87,19 @@ describe("matchQuery", () => {
     expect(search("stale")).toEqual(["shp-1003"]);
     expect(search("at risk from Brno")).toEqual(["shp-1003"]);
     expect(search("delivered today")).toEqual(["shp-1015"]);
+  });
+
+  it("matches nothing when it understood nothing", () => {
+    expect(search("shipments to Narnia by dragon")).toEqual([]);
+  });
+
+  it("finds open shipments that are neither late nor stale for 'on time'", () => {
+    const onTime = ["shp-1004", "shp-1006", "shp-1008", "shp-1009", "shp-1011", "shp-1012", "shp-1014", "shp-1017", "shp-1019"];
+    expect(search("on time")).toEqual(onTime);
+    expect(search("not late")).toEqual(onTime);
+  });
+
+  it("uses every word of 'trucks from Zaragoza'", () => {
+    expect(search("trucks from Zaragoza")).toEqual(["shp-1001", "shp-1002", "shp-1005", "shp-1007", "shp-1011", "shp-1013", "shp-1016", "shp-1019"]);
   });
 });

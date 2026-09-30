@@ -31,6 +31,9 @@ const STATUSES: Rule<NormalizedStatus>[] = [
   [/\b(exceptions?|incidents?|failed)\b/, "exception", "Incident"],
 ];
 
+// Taken before FLAGS, so "not late" is not also read as "late".
+const ON_TIME: Rule<"on_time">[] = [[/\b(on time|on schedule|not late|not delayed)\b/, "on_time", "On time"]];
+
 const FLAGS: Rule<ShipmentQuery["flags"][number]>[] = [
   [/\b(running late|late|delayed|delays?|behind schedule|behind|overdue)\b/, "late", "Running late"],
   [/\b(at risk|risky|needs? attention|problems?|issues?)\b/, "at_risk", "At risk"],
@@ -39,16 +42,32 @@ const FLAGS: Rule<ShipmentQuery["flags"][number]>[] = [
 
 const MODES: Rule<"road" | "sea">[] = [
   // Runs after STATUSES, which already consumed "at sea".
-  [/\b(by sea|sea freight|ocean|maritime|sea)\b/, "sea", "By sea"],
-  [/\b(by road|by truck|road|truck)\b/, "road", "By road"],
+  [/\b(by sea|sea freight|ocean|maritime|sea|by (ship|vessel)|ships?|vessels?)\b/, "sea", "By sea"],
+  [/\b(by road|by (truck|lorry)|roads?|trucks?|lorry|lorries)\b/, "road", "By road"],
 ];
 
 const OPERATOR_ALIASES: Rule<OperatorId>[] = [
-  [/\btransvolta\b/, "transvolta", OPERATORS.transvolta.name],
-  [/\bkestrel\b/, "kestrel", OPERATORS.kestrel.name],
-  [/\b(blue meridian|meridian)\b/, "bluemeridian", OPERATORS.bluemeridian.name],
-  [/\balpenweg\b/, "alpenweg", OPERATORS.alpenweg.name],
+  [/\btransvoltas?\b/, "transvolta", OPERATORS.transvolta.name],
+  [/\bkestrels?\b/, "kestrel", OPERATORS.kestrel.name],
+  [/\b(blue meridian|meridian)s?\b/, "bluemeridian", OPERATORS.bluemeridian.name],
+  [/\balpenwegs?\b/, "alpenweg", OPERATORS.alpenweg.name],
 ];
+
+/** True when a and b differ by exactly one inserted, deleted, replaced or swapped character. */
+function oneEdit(a: string, b: string): boolean {
+  if (a === b || Math.abs(a.length - b.length) > 1) return false;
+  let i = 0;
+  while (a[i] === b[i]) i++;
+  const [x, y] = [a.slice(i), b.slice(i)];
+  return x.slice(1) === y.slice(1) || x.slice(1) === y || x === y.slice(1) || (x[0] === y[1] && x[1] === y[0] && x.slice(2) === y.slice(2));
+}
+
+// Tolerates one typo in a country or operator name ("frnace"), only for words of 5+ letters to avoid false hits.
+const closeTo = <T>(rules: Rule<T>[], w: string) =>
+  w.length >= 5 ? rules.find(([re]) => keywords(re).some((keyword) => oneEdit(w, keyword))) : undefined;
+
+/** The plain words of a rule: /\b(france|french)\b/ → ["france", "french"]. */
+const keywords = (re: RegExp) => re.source.replace(/\\b|s\?/g, " ").match(/[a-z]{5,}/g) ?? [];
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const word = (s: string) => new RegExp(`\\b${escape(s.toLowerCase())}\\b`);
@@ -57,7 +76,7 @@ const SITE_RULES: Rule<string>[] = SITES.map((s) => [word(s.name.split(" ")[0]),
 const CUSTOMER_RULES: Rule<string>[] = CUSTOMERS.map((c) => [word(c.name.split(" ")[0]), c.id, `Customer: ${c.name}`]);
 
 const STOPWORDS = new Set(
-  "a all an and any are at about by find for from get going how in is it list me my of on or order orders please s show shipment shipments status the there to what whats where which with".split(" "),
+  "a all an and any are arrive arrives arriving at about be by due find for from get going how in is it list me my of on or order orders please s show shipment shipments status that the there to what whats where which will with".split(" "),
 );
 
 // Calendar days and weeks (Monday to Monday) in the display zone, the same days the UI shows.
@@ -101,22 +120,32 @@ export function parseQuery(text: string, now: Date = DEMO_NOW): ShipmentQuery {
     interpretedAs.push(window.chip);
   }
 
-  const query: ShipmentQuery = {
-    text,
-    ref: refMatch?.[1],
-    statuses: take(STATUSES),
-    flags: take(FLAGS),
-    countries: take(COUNTRIES),
-    mode: take(MODES)[0],
-    operatorIds: take(OPERATOR_ALIASES),
-    siteIds: take(SITE_RULES),
-    customerIds: take(CUSTOMER_RULES),
-    eta: window?.range,
-    interpretedAs,
-    unparsed: rest.split(/[^\p{L}\p{N}]+/u).filter((w) => w && !STOPWORDS.has(w)),
-  };
-  return query;
+  const statuses = take(STATUSES);
+  const flags = [...take(ON_TIME), ...take(FLAGS)];
+  const countries = take(COUNTRIES);
+  const mode = take(MODES)[0];
+  const operatorIds = take(OPERATOR_ALIASES);
+  const siteIds = take(SITE_RULES);
+  const customerIds = take(CUSTOMER_RULES);
+
+  // A near-miss is used, but the chip says which word it came from, so nothing is guessed silently.
+  const unparsed = rest.split(/[^\p{L}\p{N}]+/u).filter((w) => {
+    if (!w || STOPWORDS.has(w)) return false;
+    const country = closeTo(COUNTRIES, w);
+    const operator = country ? undefined : closeTo(OPERATOR_ALIASES, w);
+    const hit = country ?? operator;
+    if (!hit) return true;
+    if (country && !countries.includes(country[1])) countries.push(country[1]);
+    if (operator && !operatorIds.includes(operator[1])) operatorIds.push(operator[1]);
+    interpretedAs.push(`${hit[2]} (from '${w}')`);
+    return false;
+  });
+
+  return { text, ref: refMatch?.[1], statuses, flags, countries, mode, operatorIds, siteIds, customerIds, eta: window?.range, interpretedAs, unparsed };
 }
+
+/** Only unknown words: matching everything would pretend to answer, so the query matches nothing instead. */
+export const understoodNothing = (q: ShipmentQuery) => q.interpretedAs.length === 0 && q.unparsed.length > 0;
 
 /** What a query is matched against: the shipment plus its derived facts. */
 export type ShipmentFacts = {
@@ -133,8 +162,11 @@ const anyOf = <T>(wanted: T[], actual: T | T[]) =>
 
 export function matchQuery(q: ShipmentQuery, f: ShipmentFacts): boolean {
   const { shipment: s } = f;
-  const flagOk = { late: isLate(f.eta), at_risk: f.risk.level !== "low", stale: f.stale };
+  const late = isLate(f.eta);
+  // "On time" needs evidence: still open, not late, and not stale (stale data can't confirm it).
+  const flagOk = { late, at_risk: f.risk.level !== "low", stale: f.stale, on_time: f.status !== "delivered" && !late && !f.stale };
   return (
+    !understoodNothing(q) &&
     (!q.ref || s.orderRef.includes(q.ref) || s.reference.includes(q.ref)) &&
     anyOf(q.countries, f.destinationCountry) &&
     anyOf(q.statuses, f.status) &&

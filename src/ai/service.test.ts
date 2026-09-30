@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getShipment, SHIPMENTS, withUploadedDocuments } from "@/data";
 import { predictEta } from "./eta";
+import { parseQuery } from "./query";
 import { assessRisk } from "./risk";
 import { answerQuery, customerNotice, factsFor, mockAiService, suggestMapping, suggestNextAction, summarizeDay } from "./service";
 
@@ -69,7 +70,7 @@ describe("answerQuery", () => {
   const facts = (ids: string[]) => ids.map((id) => factsFor(getShipment(id)!));
 
   it("answers a question about one order from its facts, with the next step", () => {
-    const a = answerQuery(facts(["shp-1001"]));
+    const a = answerQuery(parseQuery("order 12345"), facts(["shp-1001"]));
     expect(a.shipmentId).toBe("shp-1001");
     expect(a.text).toMatch(/^SHP-1001 \(order PO-12345, Arvenza UK Ltd\) is held at customs\./);
     expect(a.text).toContain("Missing: Commercial invoice.");
@@ -77,8 +78,16 @@ describe("answerQuery", () => {
   });
 
   it("summarizes several matches and points at the most urgent", () => {
-    expect(answerQuery(facts(["shp-1006", "shp-1002", "shp-1003"])).text).toMatch(/^3 shipments match\. 2 need attention.*Most urgent: SHP-1002/);
-    expect(answerQuery([]).text).toMatch(/^No shipments match/);
+    expect(answerQuery(parseQuery("from Zaragoza"), facts(["shp-1006", "shp-1002", "shp-1003"])).text).toMatch(
+      /^3 shipments match\. 2 need attention.*Most urgent: SHP-1002/,
+    );
+    expect(answerQuery(parseQuery("to Italy"), []).text).toMatch(/^No shipments match/);
+  });
+
+  it("says what it could not understand instead of answering anyway", () => {
+    expect(answerQuery(parseQuery("shipments to Narnia by dragon"), []).text).toBe(
+      "I couldn't understand 'narnia, dragon'. Try a country, status, operator, site or order number.",
+    );
   });
 });
 

@@ -4,7 +4,7 @@ import { activeLeg, currentStatus, hoursSinceUpdate, isStale, lastMilestone } fr
 import { DOCUMENT_LABELS, type Milestone, type NormalizedStatus, type TrackedShipment } from "@/domain/types";
 import { customerOf } from "@/data";
 import { isLate, predictEta } from "./eta";
-import { parseQuery, type ShipmentFacts } from "./query";
+import { parseQuery, type ShipmentFacts, understoodNothing } from "./query";
 import { assessRisk, portDelayHours } from "./risk";
 import {
   CustomerNoticeSchema,
@@ -201,7 +201,10 @@ const etaSentence = ({ status, eta }: ShipmentFacts): string => {
 };
 
 // Every sentence is built from derived facts, the same constraint a real LLM answer would be held to.
-export function answerQuery(matches: ShipmentFacts[]): QueryAnswer {
+export function answerQuery(query: ShipmentQuery, matches: ShipmentFacts[]): QueryAnswer {
+  if (understoodNothing(query)) {
+    return { text: `I couldn't understand '${query.unparsed.join(", ")}'. Try a country, status, operator, site or order number.` };
+  }
   if (matches.length === 0) return { text: "No shipments match. Try fewer conditions, or check the reference." };
 
   if (matches.length === 1) {
@@ -274,7 +277,7 @@ export const mockAiService: AiService = {
     const notice = customerNotice(s, eta);
     return notice && CustomerNoticeSchema.parse(notice);
   },
-  answerQuery: async (_query, matches) => QueryAnswerSchema.parse(answerQuery(matches)),
+  answerQuery: async (query, matches) => QueryAnswerSchema.parse(answerQuery(query, matches)),
   suggestMapping: async (m) => {
     const suggestion = suggestMapping(m);
     return suggestion && MappingSuggestionSchema.parse(suggestion);

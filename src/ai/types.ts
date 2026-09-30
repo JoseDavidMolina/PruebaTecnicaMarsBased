@@ -50,7 +50,7 @@ export const ShipmentQuerySchema = z.object({
   ref: z.string().optional(), // digits matched against order and shipment references
   countries: z.array(z.string().length(2)),
   statuses: z.array(z.enum(NORMALIZED_STATUSES)),
-  flags: z.array(z.enum(["late", "at_risk", "stale"])),
+  flags: z.array(z.enum(["late", "at_risk", "stale", "on_time"])),
   mode: z.enum(["road", "sea"]).optional(),
   operatorIds: z.array(z.enum(["transvolta", "kestrel", "bluemeridian", "alpenweg"])),
   siteIds: z.array(z.string()),
