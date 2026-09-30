@@ -45,3 +45,7 @@ next-env.d.ts
 
 # confidential brief (kept locally only)
 /docs/brief.pdf
+
+# playwright
+/test-results/
+/playwright-report/
