@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { ai } from "@/ai";
 import type { ShipmentFacts } from "@/ai/query";
-import type { NextAction } from "@/ai/types";
+import type { CustomerNotice, NextAction } from "@/ai/types";
 import { customerOf, SHIPMENTS, SIMULATED_UPDATES, USERS, withSimulatedUpdate, withUploadedDocuments } from "@/data";
 import { visibleShipments } from "@/domain/perimeter";
 import { currentStatus, isStale } from "@/domain/timeline";
@@ -18,6 +18,15 @@ export const ACTION_KINDS: ActionKind[] = ["notify_customer", "contact_operator"
 
 /** A completed action is keyed by shipment and kind: "shp-1003:contact_operator". */
 export const doneKey = (shipmentId: string, kind: NextAction["kind"]) => `${shipmentId}:${kind}`;
+
+/**
+ * The notice the customer actually sees. A warning is only a draft until ops sends it (notify_customer);
+ * informational notices, such as a confirmed delivery window, are shown automatically.
+ * A new operator update reopens the case and clears its completed actions, so a warning already sent goes
+ * back to draft on purpose: its figures were recomputed, and ops reviews them before the customer sees them.
+ */
+export const noticeForCustomer = (notice: CustomerNotice | null, shipmentId: string, done: string[]): CustomerNotice | null =>
+  notice?.severity === "warning" && !done.includes(doneKey(shipmentId, "notify_customer")) ? null : notice;
 
 export async function getDemo() {
   const jar = await cookies();

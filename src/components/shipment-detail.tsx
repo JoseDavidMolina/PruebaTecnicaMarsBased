@@ -4,7 +4,7 @@ import { ai } from "@/ai";
 import type { ShipmentFacts } from "@/ai/query";
 import type { EtaPrediction, MappingSuggestion } from "@/ai/types";
 import { simulateUpdate } from "@/app/actions";
-import { doneKey } from "@/app/demo";
+import { doneKey, noticeForCustomer } from "@/app/demo";
 import { customerOf, SIMULATED_UPDATES, siteOf } from "@/data";
 import { OPERATORS } from "@/domain/operators";
 import { hoursSinceUpdate, lastMilestone, unifiedTimeline } from "@/domain/timeline";
@@ -409,20 +409,29 @@ export async function OpsShipmentDetail({ facts, applied, done }: { facts: Shipm
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 What the customer sees{" "}
-                {notice && noticeSent ? (
+                {notice?.severity === "warning" && noticeSent ? (
                   <Pill tone="green">
                     <CircleCheck /> Sent
                   </Pill>
                 ) : (
-                  <AiTag label="Drafted" />
+                  <AiTag label={notice?.severity === "info" ? "Automatic" : "Drafted"} />
                 )}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {notice ? (
-                <div className={cn("rounded-md border p-3 text-sm", notice.severity === "warning" ? "border-amber-200 bg-amber-50" : "bg-slate-50")}>
-                  <div className="font-medium">{notice.title}</div>
-                  <p className="mt-1 text-slate-700">{notice.body}</p>
+                <div className="space-y-2" data-testid="customer-view">
+                  <div className={cn("rounded-md border p-3 text-sm", notice.severity === "warning" ? "border-amber-200 bg-amber-50" : "bg-slate-50")}>
+                    <div className="font-medium">{notice.title}</div>
+                    <p className="mt-1 text-slate-700">{notice.body}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                    {notice.severity === "info" ? "Informational: shown to the customer automatically" : noticeSent ? "Sent · visible to the customer" : "Not visible to the customer yet"}
+                    {/* A warning can be sent from here too when the proposed action is something else (e.g. a customs hold). */}
+                    {notice.severity === "warning" && !noticeSent && action.kind !== "notify_customer" && (
+                      <ActionControl shipmentId={s.id} action={{ kind: "notify_customer", label: "Send notice", rationale: "" }} done={false} compact />
+                    )}
+                  </div>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">No proactive notice: nothing the customer needs to know right now.</p>
@@ -438,9 +447,9 @@ export async function OpsShipmentDetail({ facts, applied, done }: { facts: Shipm
   );
 }
 
-export async function CustomerShipmentDetail({ facts, applied }: { facts: ShipmentFacts; applied: boolean }) {
+export async function CustomerShipmentDetail({ facts, applied, done }: { facts: ShipmentFacts; applied: boolean; done: string[] }) {
   const s = facts.shipment;
-  const notice = await ai.customerNotice(s, facts.eta);
+  const notice = noticeForCustomer(await ai.customerNotice(s, facts.eta), s.id, done);
   const outForDelivery = facts.status === "out_for_delivery" && s.positions;
 
   return (

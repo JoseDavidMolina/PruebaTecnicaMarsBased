@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { ai } from "@/ai";
-import { loadFacts } from "@/app/demo";
+import { loadFacts, noticeForCustomer } from "@/app/demo";
 import { CUSTOMERS, customerOf, siteOf } from "@/data";
 import type { TrackedShipment, User } from "@/domain/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { NoticeBanner } from "./shipment-detail";
 import { AiTag, ConfidenceMeter, DelayNote, etaText, ModeTrail, ReliabilityBadge, StatusBadge } from "./shipment-bits";
 
-export async function CustomerHome({ user, shipments }: { user: Extract<User, { role: "customer" }>; shipments: TrackedShipment[] }) {
+export async function CustomerHome({ user, shipments, done }: { user: Extract<User, { role: "customer" }>; shipments: TrackedShipment[]; done: string[] }) {
   const facts = await Promise.all(shipments.map(loadFacts));
-  const notices = await Promise.all(facts.map((f) => ai.customerNotice(f.shipment, f.eta)));
+  const notices = await Promise.all(facts.map(async (f) => noticeForCustomer(await ai.customerNotice(f.shipment, f.eta), f.shipment.id, done)));
   // Open shipments first, soonest arrival first; delivered ones last, most recent first.
   const order = facts
     .map((f, i) => ({ f, notice: notices[i] }))

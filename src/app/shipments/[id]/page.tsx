@@ -11,5 +11,5 @@ export default async function ShipmentPage(props: PageProps<"/shipments/[id]">) 
 
   const facts = await loadFacts(shipment);
   const applied = simulated.includes(id);
-  return user.role === "ops" ? <OpsShipmentDetail facts={facts} applied={applied} done={done} /> : <CustomerShipmentDetail facts={facts} applied={applied} />;
+  return user.role === "ops" ? <OpsShipmentDetail facts={facts} applied={applied} done={done} /> : <CustomerShipmentDetail facts={facts} applied={applied} done={done} />;
 }
