@@ -25,7 +25,10 @@ pnpm typecheck                    # next typegen + tsc (typegen provides globals
 pnpm test                         # vitest, all unit tests
 pnpm test src/ai/risk.test.ts     # single file
 pnpm test -t "customs"            # tests whose name matches
+pnpm test:e2e                     # Playwright demo flow; starts its own dev server on :3200
 ```
+
+Playwright needs Chromium once (`pnpm exec playwright install chromium`). When checking the UI in a browser, use `localhost`, not `127.0.0.1`: Next dev blocks its dev resources for other origins, which breaks hydration.
 
 `dev` and `build` pass `--webpack` because the native SWC binary (needed by Turbopack) is blocked by Windows Application Control on the author's machine; webpack falls back to WASM. Drop the flag if the binary loads.
 
@@ -49,8 +52,21 @@ src/data/               synthetic data
   reference.ts          sites, customers, ports/hubs, demo users
   shipments.ts          20 shipments authored as raw payloads in each operator's native format, hours relative to DEMO_NOW;
                         SIMULATED_UPDATES holds the next raw event per hero shipment (for "simulate operator update")
-  index.ts              SHIPMENTS = RAW_SHIPMENTS.map(track); getShipment, siteOf, customerOf
+  index.ts              SHIPMENTS = RAW_SHIPMENTS.map(track); withSimulatedUpdate, getShipment, siteOf, customerOf
+src/ai/index.ts         `ai`: the single AiService instance the UI uses (swap point)
+src/app/
+  demo.ts               getDemo(): user + simulated ids from cookies → perimeter-filtered shipments; loadFacts() via `ai`
+  actions.ts            Server Actions: switchUser, simulateUpdate, resetDemo (inputs checked against known ids)
+  page.tsx              "/" → OpsDashboard or CustomerHome by role; search/filters are URL params (q, site, op, view)
+  shipments/[id]        detail by role; outside the perimeter → notFound()
+src/components/
+  shipment-bits.tsx     shared status/reliability/confidence/risk/ETA presentation (Pill, STATUS labels, etaText)
+  ops-dashboard.tsx, customer-home.tsx, shipment-detail.tsx   the screens (Server Components)
+  client-controls.tsx, delivery-map*.tsx                       the only client components
+e2e/demo.spec.ts        the demo script as a Playwright test
 ```
+
+Demo state is two cookies (`demo-user`, `demo-sim`). A Server Action that sets them re-renders the page, so there is no client-side store. Violet + sparkles marks AI output throughout the UI; keep that convention.
 
 Data flow: raw operator events → Zod validation → `normalizeEvent` → `Milestone` (keeps `rawCode`/`rawStatus` next to the normalized `status`) → `TrackedShipment` → `factsFor` / `AiService` derive status, ETA, risk, next action and notices → UI.
 
