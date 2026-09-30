@@ -97,7 +97,7 @@ describe("answerQuery", () => {
 
   it("says what it could not understand instead of answering anyway", () => {
     expect(answerQuery(parseQuery("shipments to Narnia by dragon"), []).text).toBe(
-      "I couldn't understand 'narnia, dragon'. Try a country, status, operator, site or order number.",
+      "I couldn’t understand “narnia, dragon”. Try a country, status, operator, site or order number.",
     );
   });
 });

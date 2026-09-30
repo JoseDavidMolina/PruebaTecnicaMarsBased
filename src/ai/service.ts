@@ -217,7 +217,7 @@ const etaSentence = ({ status, eta }: ShipmentFacts): string => {
 // Every sentence is built from derived facts, the same constraint a real LLM answer would be held to.
 export function answerQuery(query: ShipmentQuery, matches: ShipmentFacts[]): QueryAnswer {
   if (understoodNothing(query)) {
-    return { text: `I couldn't understand '${query.unparsed.join(", ")}'. Try a country, status, operator, site or order number.` };
+    return { text: `I couldn’t understand “${query.unparsed.join(", ")}”. Try a country, status, operator, site or order number.` };
   }
   if (matches.length === 0) return { text: "No shipments match. Try fewer conditions, or check the reference." };
 

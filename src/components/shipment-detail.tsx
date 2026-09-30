@@ -242,7 +242,7 @@ export function EtaCard({ facts, variant, className }: { facts: ShipmentFacts; v
         </div>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className="text-4xl font-semibold tracking-tight tabular-nums" data-testid="eta-main">
-            {t.main}
+            {delivered ? t.main.replace("Delivered ", "") : t.main}
           </span>
           {t.sub && <span className="text-sm text-muted-foreground">{t.sub}</span>}
         </div>
@@ -378,7 +378,7 @@ function Header({ facts, variant }: { facts: ShipmentFacts; variant: Variant }) 
       </div>
       <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
         {variant === "ops" ? `${s.orderRef} · ${customerOf(s).name}` : `Shipment ${s.reference}`}
-        <span>·</span>
+        <span className="max-sm:hidden">·</span>
         {siteOf(s).name} → {customerOf(s).place.name} ({customerOf(s).place.country})
       </p>
       <div className="max-w-3xl pt-1">
@@ -404,6 +404,9 @@ export async function OpsShipmentDetail({ facts, received, done }: { facts: Ship
   const Icon = ACTION_ICON[action.kind];
   const noticeSent = done.includes(doneKey(s.id, "notify_customer"));
   const outForDelivery = facts.status === "out_for_delivery" && s.positions;
+  const feeds = new Set(s.legs.map((l) => l.operatorId)).size;
+  // The risk reasons are listed right above: repeat the rationale only when it adds something.
+  const rationale = action.rationale && !facts.risk.reasons.join(" ").includes(action.rationale) ? action.rationale : "";
 
   return (
     <div className="space-y-6">
@@ -417,8 +420,8 @@ export async function OpsShipmentDetail({ facts, received, done }: { facts: Ship
             <CardHeader>
               <CardTitle>Unified timeline</CardTitle>
               <p className="text-xs text-muted-foreground">
-                {new Set(s.legs.map((l) => l.operatorId)).size} operator feed(s) merged. Grey tags show the raw operator status behind each
-                normalized step. <TimesNote />
+                {feeds === 1 ? "From one operator feed" : `${feeds} operator feeds merged`}. Grey tags show the raw operator status behind
+                each normalized step. <TimesNote />
               </p>
             </CardHeader>
             <CardContent>
@@ -430,7 +433,9 @@ export async function OpsShipmentDetail({ facts, received, done }: { facts: Ship
               />
               {s.invalidEvents.length > 0 && (
                 <p className="mt-2 flex items-center gap-2 text-xs text-amber-800">
-                  <TriangleAlert className="size-4" /> {s.invalidEvents.length} operator message(s) could not be read and were not used.
+                  <TriangleAlert className="size-4" />{" "}
+                  {s.invalidEvents.length === 1 ? "1 operator message" : `${s.invalidEvents.length} operator messages`} could not be read
+                  and were not used.
                 </p>
               )}
             </CardContent>
@@ -460,7 +465,7 @@ export async function OpsShipmentDetail({ facts, received, done }: { facts: Ship
                 <div className="flex gap-2 font-medium">
                   <Icon className="mt-0.5 size-4 shrink-0 text-violet-700" /> {action.label}
                 </div>
-                {action.rationale && <p className="mt-1 text-sm text-foreground">{action.rationale}</p>}
+                {rationale && <p className="mt-1 text-sm text-foreground">{rationale}</p>}
                 <div className="mt-3">
                   <ActionControl shipmentId={s.id} action={action} done={done.includes(doneKey(s.id, action.kind))} />
                 </div>
@@ -532,7 +537,8 @@ export async function CustomerShipmentDetail({ facts, received, done }: { facts:
   return (
     <div className="space-y-6">
       <Header facts={facts} variant="customer" />
-      {notice && <NoticeBanner notice={notice} />}
+      {/* A confirmed delivery window is already the ETA card's headline; any other notice adds something. */}
+      {notice && !(notice.severity === "info" && facts.eta.reliability === "confirmed") && <NoticeBanner notice={notice} />}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <EtaCard facts={facts} variant="customer" />

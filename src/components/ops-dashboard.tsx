@@ -70,6 +70,15 @@ export async function OpsDashboard({
   const operatorIds = [...new Set(shipments.flatMap((s) => s.legs.map((l) => l.operatorId)))] as OperatorId[];
   const scope = [sites.find((s) => s.id === params.site)?.name, OPERATORS[params.op as OperatorId]?.name].filter(Boolean);
   const c = summary.counts;
+  const allHref = href({ site: params.site, op: params.op, view: "all" });
+  // An empty list says what happened and offers the way out, instead of an empty table.
+  const empty = query
+    ? { text: "No shipments match this search.", link: "Clear the search", href: href({ site: params.site, op: params.op }) }
+    : view === "all"
+      ? { text: "No shipments match these filters.", link: "Show every site and operator", href: href({ view: "all" }) }
+      : handledCount
+        ? { text: `Nothing left to act on: ${handledCount} handled today.`, link: "See all shipments", href: allHref }
+        : { text: "Nothing needs attention: every shipment is on track.", link: "See all shipments", href: allHref };
   // Every KPI keeps the current filters, so its drill-down shows the same number.
   const scoped = (q?: string) => href({ q, site: params.site, op: params.op });
   // The first chip counts what is still open, so it always matches the queue it opens (handled cases leave it).
@@ -188,7 +197,7 @@ export async function OpsDashboard({
                 <p className="text-foreground">{answer.text}</p>
                 {answer.shipmentId && (
                   <Link href={`/shipments/${answer.shipmentId}`} className="text-xs font-medium text-violet-800 hover:underline">
-                    Open shipment →
+                    Open shipment
                   </Link>
                 )}
               </div>
@@ -217,7 +226,7 @@ export async function OpsDashboard({
             <span className="-mb-px border-b-2 border-primary pb-2 font-medium">Search results ({rows.length})</span>
           ) : (
             <>
-              <Link href={scoped()} className={tabClass(view === "attention")}>
+              <Link href={scoped()} className={tabClass(view === "attention")} aria-current={view === "attention" ? "page" : undefined}>
                 Needs attention ({attention.length})
               </Link>
               {handledCount > 0 && (
@@ -225,7 +234,7 @@ export async function OpsDashboard({
                   {handledCount} handled today
                 </span>
               )}
-              <Link href={href({ site: params.site, op: params.op, view: "all" })} className={tabClass(view === "all")}>
+              <Link href={allHref} className={tabClass(view === "all")} aria-current={view === "all" ? "page" : undefined}>
                 All shipments ({filtered.length})
               </Link>
             </>
@@ -236,92 +245,90 @@ export async function OpsDashboard({
         <Card className="py-0">
           {/* Below lg each row stacks (risk and shipment, route, status and ETA, action) in the same table DOM, so the
               proposed action is never off-screen behind a sideways scroll. */}
-          <Table className="max-lg:block">
-            <TableHeader className="max-lg:sr-only">
-              <TableRow>
-                <TableHead className="pl-4">Risk</TableHead>
-                <TableHead>Shipment</TableHead>
-                <TableHead>Route</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>ETA</TableHead>
-                <TableHead className="pr-4">
-                  Proposed action <Sparkles className="inline size-3 text-violet-600" />
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="max-lg:block">
-              {rows.map((f) => {
-                const s = f.shipment;
-                const action = actions.get(s.id)!;
-                const Icon = ACTION_ICON[action.kind];
-                return (
-                  <TableRow
-                    key={s.id}
-                    className="align-top max-lg:flex max-lg:flex-wrap max-lg:items-center max-lg:gap-x-3 max-lg:gap-y-3 max-lg:p-4"
-                    data-testid={`row-${s.id}`}
-                  >
-                    <TableCell className="pl-4 max-lg:p-0">
-                      <RiskBadge risk={f.risk} />
-                    </TableCell>
-                    <TableCell className="max-lg:min-w-0 max-lg:flex-1 max-lg:p-0">
-                      <Link href={`/shipments/${s.id}`} className="font-medium underline-offset-2 hover:underline">
-                        {s.reference}
-                      </Link>
-                      <div className="text-xs text-muted-foreground">
-                        {s.orderRef} · {customerOf(s).name}
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-64 text-sm whitespace-normal max-lg:max-w-none max-lg:basis-full max-lg:p-0">
-                      <div>
-                        {siteOf(s).place.name} → {customerOf(s).place.name}
-                      </div>
-                      <div className="mt-1 space-y-1 text-xs text-muted-foreground">
-                        <JourneyLine shipment={s} stale={f.stale} />
-                        <div>{[...new Set(s.legs.map((l) => OPERATORS[l.operatorId].name))].join(", ")}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-lg:p-0">
-                      <div className="flex flex-col items-start gap-1">
-                        <StatusBadge status={f.status} />
-                        {f.stale && <StaleBadge hours={hoursSinceUpdate(s) ?? 0} />}
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-lg:flex-1 max-lg:p-0">
-                      <EtaCell eta={f.eta} delivered={f.status === "delivered"} stale={f.stale} />
-                    </TableCell>
-                    <TableCell className="max-w-52 pr-4 whitespace-normal max-lg:max-w-none max-lg:basis-full max-lg:p-0">
-                      {action.kind === "none" ? (
-                        <span className="flex gap-2 text-sm text-muted-foreground">
-                          <Icon className="mt-0.5 size-4 shrink-0 text-emerald-600" /> No action needed
-                        </span>
-                      ) : (
-                        <div className="space-y-1.5">
-                          <Link href={`/shipments/${s.id}`} className="group flex gap-2 text-sm">
-                            <Icon className="mt-0.5 size-4 shrink-0 text-violet-600" />
-                            <span className="group-hover:underline">{action.label}</span>
-                          </Link>
-                          <div className="pl-6">
-                            <ActionControl shipmentId={s.id} action={action} done={handled(f)} compact />
-                          </div>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {rows.length === 0 && (
-                <TableRow className="max-lg:block">
-                  <TableCell colSpan={6} className="py-10 text-center whitespace-normal text-muted-foreground max-lg:block">
-                    {view !== "attention"
-                      ? "No shipments match."
-                      : handledCount
-                        ? "Nothing left to act on: every shipment at risk has been handled."
-                        : "Nothing needs attention. Every shipment is on track."}
-                  </TableCell>
+          {rows.length === 0 ? (
+            <div className="space-y-2 px-4 py-10 text-center text-sm text-muted-foreground">
+              <p>{empty.text}</p>
+              <Link href={empty.href} className="font-medium text-foreground underline underline-offset-2 hover:text-primary">
+                {empty.link}
+              </Link>
+            </div>
+          ) : (
+            <Table className="max-lg:block">
+              <TableHeader className="max-lg:sr-only">
+                <TableRow>
+                  <TableHead className="pl-4">Risk</TableHead>
+                  <TableHead>Shipment</TableHead>
+                  <TableHead>Route</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>ETA</TableHead>
+                  <TableHead className="pr-4">
+                    Proposed action <Sparkles className="inline size-3 text-violet-600" />
+                  </TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody className="max-lg:block">
+                {rows.map((f) => {
+                  const s = f.shipment;
+                  const action = actions.get(s.id)!;
+                  const Icon = ACTION_ICON[action.kind];
+                  return (
+                    <TableRow
+                      key={s.id}
+                      className="align-top max-lg:flex max-lg:flex-wrap max-lg:items-center max-lg:gap-x-3 max-lg:gap-y-3 max-lg:p-4"
+                      data-testid={`row-${s.id}`}
+                    >
+                      <TableCell className="pl-4 max-lg:p-0">
+                        <RiskBadge risk={f.risk} />
+                      </TableCell>
+                      <TableCell className="max-lg:min-w-0 max-lg:flex-1 max-lg:p-0">
+                        <Link href={`/shipments/${s.id}`} className="font-medium underline-offset-2 hover:underline">
+                          {s.reference}
+                        </Link>
+                        <div className="text-xs text-muted-foreground">
+                          {s.orderRef} · {customerOf(s).name}
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-64 text-sm whitespace-normal max-lg:max-w-none max-lg:basis-full max-lg:p-0">
+                        <div>
+                          {siteOf(s).place.name} → {customerOf(s).place.name}
+                        </div>
+                        <div className="mt-1 space-y-1 text-xs text-muted-foreground">
+                          <JourneyLine shipment={s} stale={f.stale} />
+                          <div>{[...new Set(s.legs.map((l) => OPERATORS[l.operatorId].name))].join(", ")}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-lg:p-0">
+                        <div className="flex flex-col items-start gap-1">
+                          <StatusBadge status={f.status} />
+                          {f.stale && <StaleBadge hours={hoursSinceUpdate(s) ?? 0} />}
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-lg:flex-1 max-lg:p-0">
+                        <EtaCell eta={f.eta} delivered={f.status === "delivered"} stale={f.stale} />
+                      </TableCell>
+                      <TableCell className="max-w-52 pr-4 whitespace-normal max-lg:max-w-none max-lg:basis-full max-lg:p-0">
+                        {action.kind === "none" ? (
+                          <span className="flex gap-2 text-sm text-muted-foreground">
+                            <Icon className="mt-0.5 size-4 shrink-0 text-emerald-600" /> No action needed
+                          </span>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <Link href={`/shipments/${s.id}`} className="group flex gap-2 text-sm">
+                              <Icon className="mt-0.5 size-4 shrink-0 text-violet-600" />
+                              <span className="group-hover:underline">{action.label}</span>
+                            </Link>
+                            <div className="pl-6">
+                              <ActionControl shipmentId={s.id} action={action} done={handled(f)} compact />
+                            </div>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </Card>
       </section>
     </div>

@@ -148,7 +148,7 @@ export function parseQuery(text: string, now: Date = DEMO_NOW): ShipmentQuery {
     if (!hit) return true;
     if (country && !countries.includes(country[1])) countries.push(country[1]);
     if (operator && !operatorIds.includes(operator[1])) operatorIds.push(operator[1]);
-    interpretedAs.push(`${hit[2]} (from '${w}')`);
+    interpretedAs.push(`${hit[2]} (from “${w}”)`);
     return false;
   });
 

@@ -54,7 +54,7 @@ describe("parseQuery", () => {
   it("tolerates one typo in a country or operator name and says so in the chip", () => {
     const q = parseQuery("shipmnts to Frnace runing late");
     expect(q).toMatchObject({ countries: ["FR"], flags: ["late"], unparsed: ["shipmnts", "runing"] });
-    expect(q.interpretedAs).toContain("To France (from 'frnace')");
+    expect(q.interpretedAs).toContain("To France (from “frnace”)");
     expect(parseQuery("transvota").operatorIds).toEqual(["transvolta"]);
     expect(parseQuery("spin").countries).toEqual([]); // short words are never stretched to a name
   });
@@ -69,7 +69,7 @@ describe("parseQuery", () => {
     ["britian", "To United Kingdom"],
     ["meridain", "Blue Meridian Lines"],
   ])("reads the typo '%s' as %s", (typo, label) => {
-    expect(parseQuery(`${typo} shipments`).interpretedAs).toEqual([`${label} (from '${typo}')`]);
+    expect(parseQuery(`${typo} shipments`).interpretedAs).toEqual([`${label} (from “${typo}”)`]);
   });
 
   // Real words one edit from a name, and short near-misses: never stretched to a country or operator.
