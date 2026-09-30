@@ -33,8 +33,9 @@ export async function getDemo() {
   const user = USERS.find((u) => u.id === jar.get(USER_COOKIE)?.value) ?? USERS[0];
   const simulated = (jar.get(SIM_COOKIE)?.value ?? "").split(",").filter((id) => id in SIMULATED_UPDATES);
   const done = (jar.get(DONE_COOKIE)?.value ?? "").split(",").filter(Boolean);
-  const all = SHIPMENTS.map((s) => (simulated.includes(s.id) ? withSimulatedUpdate(s) : s)).map((s) =>
-    done.includes(doneKey(s.id, "upload_document")) ? withUploadedDocuments(s) : s,
+  // Uploads first: the operator's next message can depend on whether the file is complete.
+  const all = SHIPMENTS.map((s) => (done.includes(doneKey(s.id, "upload_document")) ? withUploadedDocuments(s) : s)).map((s) =>
+    simulated.includes(s.id) ? withSimulatedUpdate(s) : s,
   );
   return { user, simulated, done, shipments: visibleShipments(user, all) };
 }

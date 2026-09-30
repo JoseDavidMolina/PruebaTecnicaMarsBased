@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { currentStatus, isStale } from "@/domain/timeline";
-import { getShipment, SHIPMENTS } from ".";
+import { getShipment, SHIPMENTS, withSimulatedUpdate, withUploadedDocuments } from ".";
 
 const hero = (id: string) => getShipment(id)!;
 
@@ -22,6 +22,16 @@ describe("mock data", () => {
 
   it("only flags the intended shipment as stale", () => {
     expect(SHIPMENTS.filter((s) => isStale(s)).map((s) => s.id)).toEqual(["shp-1003"]);
+  });
+
+  it("clears SHP-1001 through customs only once its invoice is on file", () => {
+    const stillMissing = withSimulatedUpdate(hero("shp-1001"));
+    expect(currentStatus(stillMissing)).toBe("customs_hold");
+    expect(stillMissing.milestones.at(-1)).toMatchObject({ rawStatus: "Code 40", location: "Dover" });
+
+    const complete = withSimulatedUpdate(withUploadedDocuments(hero("shp-1001")));
+    expect(currentStatus(complete)).toBe("customs_cleared");
+    expect(complete.documents.filter((d) => d.status === "missing")).toEqual([]);
   });
 
   it("surfaces the undocumented Alpenweg code as unknown", () => {

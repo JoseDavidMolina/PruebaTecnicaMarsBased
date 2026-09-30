@@ -1,15 +1,21 @@
 import { track } from "@/domain/timeline";
-import type { Customer, Site, TrackedShipment } from "@/domain/types";
+import type { Customer, RawEvent, Site, TrackedShipment } from "@/domain/types";
 import { CUSTOMERS, SITES } from "./reference";
-import { RAW_SHIPMENTS, SIMULATED_UPDATES } from "./shipments";
+import { RAW_SHIPMENTS, SIMULATED_UPDATES, SIMULATED_WHILE_FILE_INCOMPLETE } from "./shipments";
 
 export { CUSTOMERS, SITES, USERS } from "./reference";
 export { SIMULATED_UPDATES };
 
 export const SHIPMENTS: TrackedShipment[] = RAW_SHIPMENTS.map(track);
 
-export const withSimulatedUpdate = (s: TrackedShipment): TrackedShipment =>
-  SIMULATED_UPDATES[s.id] ? track({ ...s, events: [...s.events, SIMULATED_UPDATES[s.id]] }) : s;
+/** The operator's next message, which can depend on the shipment's file (see SIMULATED_WHILE_FILE_INCOMPLETE). */
+const nextOperatorEvent = (s: TrackedShipment): RawEvent | undefined =>
+  (s.documents.some((d) => d.status === "missing") && SIMULATED_WHILE_FILE_INCOMPLETE[s.id]) || SIMULATED_UPDATES[s.id];
+
+export const withSimulatedUpdate = (s: TrackedShipment): TrackedShipment => {
+  const event = nextOperatorEvent(s);
+  return event ? track({ ...s, events: [...s.events, event] }) : s;
+};
 
 
 export const withUploadedDocuments = (s: TrackedShipment): TrackedShipment => ({

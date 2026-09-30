@@ -26,8 +26,10 @@ export async function simulateUpdate(formData: FormData) {
   const jar = await cookies();
   const current = list(jar.get(SIM_COOKIE)?.value);
   if (!current.includes(id)) jar.set(SIM_COOKIE, [...current, id].join(","));
-  // New operator information reopens the case: what ops did before may no longer apply.
-  jar.set(DONE_COOKIE, list(jar.get(DONE_COOKIE)?.value).filter((k) => !k.startsWith(`${id}:`)).join(","));
+  // New operator information reopens the case: what ops decided before may no longer apply.
+  // An uploaded document is a fact, not a decision, so it stays uploaded.
+  const keep = (k: string) => !k.startsWith(`${id}:`) || k === doneKey(id, "upload_document");
+  jar.set(DONE_COOKIE, list(jar.get(DONE_COOKIE)?.value).filter(keep).join(","));
 }
 
 /** Ops completes the proposed next action. Only for an ops user, on a shipment inside their perimeter. */

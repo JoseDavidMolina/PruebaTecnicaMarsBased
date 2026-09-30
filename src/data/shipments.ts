@@ -295,3 +295,8 @@ export const SIMULATED_UPDATES: Record<string, RawEvent> = {
   "shp-1003": { legId: "shp-1003-L1", operatorId: "alpenweg", payload: aw("UNT", 0, "Passau", "Unterwegs") },
   "shp-1004": { legId: "shp-1004-L2", operatorId: "tarnwick", payload: tn("Delivered - signed by C. Dubois", 0, "Villeurbanne") },
 };
+
+/** Customs does not release a shipment whose file is incomplete: until ops uploads it, the next message repeats the hold. */
+export const SIMULATED_WHILE_FILE_INCOMPLETE: Record<string, RawEvent> = {
+  "shp-1001": { legId: "shp-1001-L1", operatorId: "transvolta", payload: tv(40, 0, "Dover") },
+};

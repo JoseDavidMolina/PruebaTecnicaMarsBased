@@ -11,7 +11,7 @@ vi.mock("next/headers", () => ({
 }));
 
 const { simulateUpdate } = await import("./actions");
-const { SIM_COOKIE, USER_COOKIE } = await import("./demo");
+const { DONE_COOKIE, doneKey, getDemo, SIM_COOKIE, USER_COOKIE } = await import("./demo");
 
 const simulate = (userId: string, shipmentId: string) => {
   jar.set(USER_COOKIE, userId);
@@ -31,6 +31,17 @@ describe("simulateUpdate", () => {
   it("lets a customer simulate their own shipment: it is a demo control", async () => {
     await simulate("u-cust-oskendra-mx", "shp-1002");
     expect(jar.get(SIM_COOKIE)).toBe("shp-1002");
+  });
+
+  it("reopens the decisions ops made, but keeps an uploaded document uploaded", async () => {
+    jar.set(DONE_COOKIE, [doneKey("shp-1001", "upload_document"), doneKey("shp-1001", "notify_customer"), doneKey("shp-1002", "notify_customer")].join(","));
+    await simulate("u-ops-all", "shp-1001");
+    expect(jar.get(DONE_COOKIE)).toBe("shp-1001:upload_document,shp-1002:notify_customer");
+    // With the invoice on file, the operator's update is the customs release.
+    const { shipments } = await getDemo();
+    const s = shipments.find((x) => x.id === "shp-1001")!;
+    expect(s.milestones.at(-1)?.status).toBe("customs_cleared");
+    expect(s.documents.every((d) => d.status === "available")).toBe(true);
   });
 
   it("ignores a shipment outside the perimeter, even a known one", async () => {
