@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A clickable frontend prototype of a shipment tracking app with AI features, built for the MarsBased technical test (brief: `docs/brief.pdf`). An industrial manufacturer ships from several sites through several logistics operators, by road and sea, domestically and internationally. The app unifies what each operator reports into one reliable view, for two roles.
+A clickable frontend prototype of a shipment tracking app with AI features, built for the MarsBased technical test (brief: `docs/brief.pdf`, gitignored and local only, never commit it). An industrial manufacturer ships from several sites through several logistics operators, by road and sea, domestically and internationally. The app unifies what each operator reports into one reliable view, for two roles.
 
 Hard constraints from the brief:
 - Frontend only: no backend, database or real integrations. Everything is mocked.
@@ -34,23 +34,30 @@ Do not add dependencies without asking the user first. Installed stack: Next.js 
 ## Architecture
 
 ```
-src/lib/clock.ts        DEMO_NOW: the only "now" in the app. Never call new Date() / Date.now() for business logic.
+src/lib/clock.ts        DEMO_NOW (2026-10-07T07:00Z): the only "now". Never use new Date()/Date.now() for business logic.
+                        Formatters use a fixed Europe/Madrid zone so output is machine-independent.
 src/domain/             deterministic rules (not AI)
-  types.ts              entity types (plain TS)
-  operators.ts          per-operator raw payload Zod schemas, code→status maps, normalizeEvent()
-  timeline.ts           unified multi-operator timeline, currentStatus, stale detection
-  perimeter.ts          which shipments a user may see
-src/ai/                 everything "AI", behind one interface
+  types.ts              entity types (plain TS). ShipmentDocument, not Document (clashes with the DOM global)
+  operators.ts          4 fictional operators: per-operator raw Zod schema, code→status map, normalizeEvent()
+  timeline.ts           track(): raw events → TrackedShipment; currentStatus, activeLeg, reportedEta, isStale, unifiedTimeline
+  perimeter.ts          visibleShipments(user, shipments)
+src/ai/                 everything "AI"
   types.ts              Zod schemas for every AI output (types inferred from them)
-  service.ts            AiService interface + mockAiService
-  risk.ts eta.ts query.ts   pure mock logic, unit tested
+  eta.ts risk.ts query.ts   pure mock logic: ETA with range/confidence, risk score/flags/reasons, NL query parser + matcher
+  service.ts            AiService interface + mockAiService; next action, daily summary, customer notice; factsFor()
 src/data/               synthetic data
-  reference.ts          sites, customers, operators, demo users
-  shipments.ts          shipments with raw events in each operator's native format
-  index.ts              validates raw events with Zod → normalizes → TrackedShipment[]
+  reference.ts          sites, customers, ports/hubs, demo users
+  shipments.ts          20 shipments authored as raw payloads in each operator's native format, hours relative to DEMO_NOW;
+                        SIMULATED_UPDATES holds the next raw event per hero shipment (for "simulate operator update")
+  index.ts              SHIPMENTS = RAW_SHIPMENTS.map(track); getShipment, siteOf, customerOf
 ```
 
-Data flow: raw operator events (heterogeneous) → Zod validation → `normalizeEvent` → `Milestone` (keeps `rawCode`/`rawStatus` next to the normalized `status`) → `TrackedShipment` → AI services derive risk / ETA / next action / notices → UI.
+Data flow: raw operator events → Zod validation → `normalizeEvent` → `Milestone` (keeps `rawCode`/`rawStatus` next to the normalized `status`) → `TrackedShipment` → `factsFor` / `AiService` derive status, ETA, risk, next action and notices → UI.
+
+- Simulating an operator update is `track({ ...s, events: [...s.events, SIMULATED_UPDATES[s.id]] })`; everything downstream is recomputed.
+- Normalization is contextual: operators report per leg, so `delivered` on a non-final leg becomes a handover (`at_port`/`in_transit`) in `track()`. Malformed payloads land in `invalidEvents` instead of being dropped silently.
+- Tests pin the demo: `src/data/index.test.ts`, `risk.test.ts` and `service.test.ts` assert the hero scenarios, the risk ranking and the exact ops headline. Changing mock data or heuristics will intentionally break them; update the expectations on purpose.
+- `ponytail:` comments mark deliberate simplifications and their upgrade path.
 
 ## Principles (non-negotiable)
 
