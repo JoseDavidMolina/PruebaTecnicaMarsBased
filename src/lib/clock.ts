@@ -34,6 +34,9 @@ export const formatDuration = (hours: number): string => {
   return `${d} day${d === 1 ? "" : "s"}`;
 };
 
+/** How old a piece of data is: "just now" under an hour, then "1 hour ago", "4 days ago". */
+export const formatAgo = (hours: number): string => (hours < 1 ? "just now" : `${formatDuration(hours)} ago`);
+
 export const formatDateTime = (iso: string): string => `${formatDate(iso)}, ${formatTime(iso)}`;
 
 export const formatLongDate = (iso: string): string =>

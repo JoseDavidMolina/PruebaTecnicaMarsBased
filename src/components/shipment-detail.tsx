@@ -9,7 +9,7 @@ import { customerOf, SIMULATED_UPDATES, siteOf } from "@/data";
 import { OPERATORS } from "@/domain/operators";
 import { hoursSinceUpdate, lastMilestone, unifiedTimeline } from "@/domain/timeline";
 import { DOCUMENT_LABELS, type Leg, type Milestone, type TrackedShipment } from "@/domain/types";
-import { DEMO_NOW, formatDateTime, formatDuration } from "@/lib/clock";
+import { DEMO_NOW, formatAgo, formatDateTime } from "@/lib/clock";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubmitButton } from "./client-controls";
@@ -327,7 +327,7 @@ function Header({ facts, variant }: { facts: ShipmentFacts; variant: Variant }) 
       </p>
       {/* Freshness is always visible: how old is what we are showing? */}
       <p className="text-xs text-muted-foreground" data-testid="freshness">
-        {last ? `Last ${source}: ${formatDateTime(last.at)} (${formatDuration(hoursSinceUpdate(s) ?? 0)} ago)` : "No update from the carrier yet"}
+        {last ? `Last ${source}: ${formatDateTime(last.at)} (${formatAgo(hoursSinceUpdate(s) ?? 0)})` : "No update from the carrier yet"}
       </p>
     </div>
   );
