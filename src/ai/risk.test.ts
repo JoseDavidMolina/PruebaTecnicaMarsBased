@@ -24,6 +24,10 @@ describe("assessRisk", () => {
     expect(risk("shp-1003")).toMatchObject({ level: "medium", flags: ["stale"] });
   });
 
+  it("flags an unrecognised operator code without raising it to the attention queue", () => {
+    expect(risk("shp-1014")).toMatchObject({ level: "low", flags: ["unrecognised_update"] });
+  });
+
   it("gives zero risk once delivered and low risk when on track", () => {
     expect(risk("shp-1005")).toEqual({ score: 0, level: "low", flags: [], reasons: [] });
     expect(risk("shp-1006")).toMatchObject({ level: "low", flags: [] });

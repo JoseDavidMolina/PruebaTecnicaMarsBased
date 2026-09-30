@@ -1,6 +1,6 @@
 import { addHours, DEMO_NOW, formatDate, formatDuration, formatTime, hoursBetween } from "@/lib/clock";
 import { OPERATORS } from "@/domain/operators";
-import { activeLeg, currentStatus, hoursSinceUpdate, isStale, reportedEta } from "@/domain/timeline";
+import { activeLeg, currentStatus, hoursSinceUpdate, isStale, lastMilestone, reportedEta } from "@/domain/timeline";
 import type { Confidence, Leg, Mode, TrackedShipment } from "@/domain/types";
 import type { EtaPrediction } from "./types";
 
@@ -56,7 +56,13 @@ export function predictEta(s: TrackedShipment, now: Date = DEMO_NOW): EtaPredict
   } else {
     const toPlan = hoursBetween(now, leg.plannedArrival);
     hoursLeft = toPlan > 0 ? toPlan : duration(leg) * 0.25;
-    reasons.push(toPlan > 0 ? "In transit, on track against planned transit time." : `Was due at ${leg.to.name} on ${formatDate(leg.plannedArrival)} and is still in transit.`);
+    reasons.push(
+      toPlan <= 0
+        ? `Was due at ${leg.to.name} on ${formatDate(leg.plannedArrival)} and is still in transit.`
+        : isStale(s, now)
+          ? `Planned to reach ${leg.to.name} on ${formatDate(leg.plannedArrival)}.` // no fresh data to say it is on track
+          : "In transit, on track against planned transit time.",
+    );
   }
 
   if (status === "customs_hold") {
@@ -75,6 +81,9 @@ export function predictEta(s: TrackedShipment, now: Date = DEMO_NOW): EtaPredict
     uncertainty += silent;
     reasons.push(`No operator update for ${Math.round(silent)}h, so this assumes planned progress.`);
   }
+  // An unreadable latest update is still information we don't have: never report high confidence over it.
+  const unread = lastMilestone(s)?.status === "unknown";
+  if (unread) reasons.push("The latest operator update could not be read, so this is based on the one before.");
   const remaining = s.legs.filter((l) => l.seq > leg.seq);
   for (const next of remaining) {
     hoursLeft += duration(next);
@@ -86,7 +95,7 @@ export function predictEta(s: TrackedShipment, now: Date = DEMO_NOW): EtaPredict
 
   hoursLeft = Math.max(1, hoursLeft);
   const expected = addHours(now, hoursLeft);
-  const confidence: Confidence = stale || uncertainty > 48 ? "low" : uncertainty > 12 ? "medium" : "high";
+  const confidence: Confidence = stale || uncertainty > 48 ? "low" : uncertainty > 12 || unread ? "medium" : "high";
 
   return {
     expected,

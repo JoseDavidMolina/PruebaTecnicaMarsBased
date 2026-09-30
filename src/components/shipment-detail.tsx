@@ -8,7 +8,7 @@ import { customerOf, SIMULATED_UPDATES, siteOf } from "@/data";
 import { OPERATORS } from "@/domain/operators";
 import { hoursSinceUpdate, unifiedTimeline } from "@/domain/timeline";
 import { DOCUMENT_LABELS, type Leg, type Milestone, type TrackedShipment } from "@/domain/types";
-import { DEMO_NOW, formatDate, formatDateTime } from "@/lib/clock";
+import { DEMO_NOW, formatDateTime } from "@/lib/clock";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubmitButton } from "./client-controls";
@@ -40,19 +40,20 @@ function LegHeader({ leg, variant }: { leg: Leg; variant: Variant }) {
   );
 }
 
-function TimelineItem({ m, title, sub }: { m: Pick<Milestone, "reliability" | "at">; title: string; sub?: React.ReactNode }) {
+/** Solid dot = happened. Hollow dot = still to come (dashed when it is only our estimate). */
+function TimelineItem({ m, title, sub, upcoming = false }: { m: Pick<Milestone, "reliability" | "at">; title: string; sub?: React.ReactNode; upcoming?: boolean }) {
   const estimated = m.reliability === "estimated";
   return (
     <li className="relative pb-5 pl-8">
       <span
         className={cn(
           "absolute top-1 left-1.5 size-2.5 rounded-full",
-          estimated ? "border-2 border-dashed border-slate-400 bg-white" : "bg-slate-900",
+          estimated ? "border-2 border-dashed border-slate-400 bg-white" : upcoming ? "border-2 border-slate-900 bg-white" : "bg-slate-900",
         )}
       />
       <div className="flex flex-wrap items-center gap-2">
         <span className={cn("text-sm font-medium", estimated && "text-muted-foreground")}>{title}</span>
-        {estimated && <ReliabilityBadge reliability="estimated" />}
+        {(estimated || upcoming) && <ReliabilityBadge reliability={m.reliability} />}
       </div>
       <div className="text-xs text-muted-foreground">{sub}</div>
     </li>
@@ -108,6 +109,7 @@ export function Timeline({ shipment, eta, variant }: { shipment: TrackedShipment
       })}
       {!delivered && (
         <TimelineItem
+          upcoming
           m={{ reliability: eta.reliability, at: eta.expected }}
           title={`Delivery to ${customerOf(shipment).place.name}`}
           sub={[etaText(eta, false).main, etaText(eta, false).sub].filter(Boolean).join(" · ")}
@@ -135,7 +137,9 @@ export function EtaCard({ facts, variant }: { facts: ShipmentFacts; variant: Var
   return (
     <Card>
       <CardContent className="space-y-3">
-        <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{delivered ? "Delivered" : "Estimated delivery"}</div>
+        <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          {delivered ? "Delivered" : eta.reliability === "confirmed" ? "Delivery window" : "Estimated delivery"}
+        </div>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className="text-3xl font-semibold tracking-tight" data-testid="eta-main">
             {t.main}
@@ -145,8 +149,8 @@ export function EtaCard({ facts, variant }: { facts: ShipmentFacts; variant: Var
         <div className="flex flex-wrap items-center gap-3">
           <ReliabilityBadge reliability={eta.reliability} />
           {eta.reliability === "estimated" && <ConfidenceMeter confidence={eta.confidence} />}
-          {!delivered && <DelayNote eta={eta} />}
-          <span className="text-xs text-muted-foreground">Promised {formatDate(shipment.promisedDelivery)}</span>
+          {!delivered && <DelayNote eta={eta} stale={facts.stale} />}
+          <span className="text-xs text-muted-foreground">Promised {formatDateTime(shipment.promisedDelivery)}</span>
         </div>
         {variant === "ops" && (
           <p className="flex gap-2 rounded-md bg-slate-50 p-3 text-sm text-slate-700">

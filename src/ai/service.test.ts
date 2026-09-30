@@ -17,7 +17,7 @@ describe("summarizeDay", () => {
   it("writes the ops headline and ranks the exception queue", () => {
     const summary = summarizeDay(SHIPMENTS);
     expect(summary.headline).toBe(
-      "Today: 5 at risk (1 held at customs, 1 delayed at port, 1 with no recent update, 1 with a delivery incident), 1 out for delivery, 2 delivered.",
+      "Today: 5 at risk (1 held at customs, 1 delayed at port, 1 with no recent update, 1 with a delivery incident, 1 running late), 1 out for delivery, 2 delivered.",
     );
     expect(summary.items.map((i) => i.shipmentId)).toEqual(["shp-1001", "shp-1010", "shp-1002", "shp-1003", "shp-1016"]);
   });
@@ -31,6 +31,10 @@ describe("suggestNextAction", () => {
     expect(action("shp-1010").kind).toBe("contact_operator");
     expect(action("shp-1006").kind).toBe("none");
   });
+
+  it("asks the operator about an update it could not read", () => {
+    expect(action("shp-1014")).toMatchObject({ kind: "contact_operator", label: "Ask Alpenweg Logistik what their latest update means" });
+  });
 });
 
 describe("customerNotice", () => {
@@ -39,7 +43,14 @@ describe("customerNotice", () => {
       severity: "warning",
       title: "Your shipment will arrive 2 days later than planned",
     });
-    expect(notice("shp-1002")?.body).toMatch(/^This is due to congestion at the Port of Veracruz\. New estimated delivery: /);
+    // The cause comes from the operator's data (vessel behind plan), never from an invented reason.
+    expect(notice("shp-1002")?.body).toMatch(/^The vessel is running 4 days behind schedule at the Port of Veracruz\. New estimated delivery: /);
+  });
+
+  it("does not claim actions nobody has taken", () => {
+    for (const id of ["shp-1001", "shp-1003"]) {
+      expect(notice(id)?.body).not.toMatch(/we (are|have)/i);
+    }
   });
 
   it("confirms the delivery window, and stays quiet when there is nothing to say", () => {

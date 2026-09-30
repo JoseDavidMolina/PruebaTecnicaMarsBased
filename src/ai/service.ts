@@ -1,11 +1,11 @@
 import { DEMO_NOW, formatDateRange, formatDuration, formatTime, hoursBetween } from "@/lib/clock";
 import { OPERATORS } from "@/domain/operators";
-import { activeLeg, currentStatus, isStale, lastMilestone } from "@/domain/timeline";
+import { activeLeg, currentStatus, hoursSinceUpdate, isStale, lastMilestone } from "@/domain/timeline";
 import { DOCUMENT_LABELS, type TrackedShipment } from "@/domain/types";
 import { customerOf } from "@/data";
 import { isLate, predictEta } from "./eta";
 import { parseQuery, type ShipmentFacts } from "./query";
-import { assessRisk } from "./risk";
+import { assessRisk, portDelayHours } from "./risk";
 import {
   CustomerNoticeSchema,
   DailySummarySchema,
@@ -18,6 +18,7 @@ import {
   type EtaPrediction,
   type NextAction,
   type RiskAssessment,
+  type RiskFlag,
   type ShipmentQuery,
 } from "./types";
 
@@ -68,8 +69,25 @@ export function suggestNextAction(s: TrackedShipment, risk: RiskAssessment): Nex
       rationale: risk.reasons.filter((r) => /behind plan|past the promised/.test(r)).join(" "),
     };
   }
+  if (has("unrecognised_update")) {
+    return {
+      kind: "contact_operator",
+      label: `Ask ${operator} what their latest update means`,
+      rationale: risk.reasons.find((r) => r.includes("don't recognise")) ?? "",
+    };
+  }
   return { kind: "none", label: "No action needed", rationale: "On track." };
 }
+
+// Each at-risk shipment is counted once, under its first matching cause, so the breakdown adds up to the total.
+const SUMMARY_CAUSES: [RiskFlag, string][] = [
+  ["customs_hold", "held at customs"],
+  ["port_delay", "delayed at port"],
+  ["stale", "with no recent update"],
+  ["exception", "with a delivery incident"],
+  ["late", "running late"],
+  ["missing_document", "missing documents"],
+];
 
 export function summarizeDay(shipments: TrackedShipment[], now: Date = DEMO_NOW): DailySummary {
   const assessed = shipments.map((s) => ({ s, risk: assessRisk(s, now) }));
@@ -90,12 +108,10 @@ export function summarizeDay(shipments: TrackedShipment[], now: Date = DEMO_NOW)
     }).length,
   };
 
-  const detail = [
-    counts.customsHold && `${counts.customsHold} held at customs`,
-    counts.portDelay && `${counts.portDelay} delayed at port`,
-    counts.stale && `${counts.stale} with no recent update`,
-    counts.exceptions && `${counts.exceptions} with a delivery incident`,
-  ].filter(Boolean);
+  const causes = atRisk.map(({ risk }) => SUMMARY_CAUSES.find(([f]) => risk.flags.includes(f)));
+  const detail = SUMMARY_CAUSES.map((cause) => [causes.filter((c) => c === cause).length, cause[1]] as const)
+    .filter(([n]) => n > 0)
+    .map(([n, label]) => `${n} ${label}`);
 
   return {
     headline:
@@ -118,14 +134,15 @@ export function customerNotice(s: TrackedShipment, eta: EtaPrediction, now: Date
     return {
       severity: "warning",
       title: "Your shipment is held at customs",
-      body: `Customs is reviewing your shipment in ${last?.location ?? leg.to.name}. We are already providing the documents they need. New estimated delivery: ${when}.`,
+      body: `Customs is reviewing your shipment in ${last?.location ?? leg.to.name}. Clearance usually takes about 2 days. New estimated delivery: ${when}.`,
     };
   }
+  // Only state what the data supports: no invented causes, no promises about actions nobody has taken yet.
   if (isStale(s, now)) {
     return {
       severity: "info",
-      title: "We are checking on your shipment",
-      body: `The carrier has not sent an update recently, so we have asked them for one. Current estimate: ${when}.`,
+      title: "Waiting for an update from the carrier",
+      body: `The carrier has not sent an update for ${formatDuration(hoursSinceUpdate(s, now) ?? 0)}, so this estimate is less certain. Current estimate: ${when}.`,
     };
   }
   if (status === "exception") {
@@ -136,11 +153,12 @@ export function customerNotice(s: TrackedShipment, eta: EtaPrediction, now: Date
     };
   }
   if (isLate(eta)) {
-    const cause = leg.mode === "sea" && status === "at_port" ? `congestion at the ${leg.to.name}` : "a delay in transit";
+    const portDelay = portDelayHours(s, now);
+    const cause = portDelay > 0 ? `The vessel is running ${formatDuration(portDelay)} behind schedule at the ${leg.to.name}.` : "It is taking longer than planned in transit.";
     return {
       severity: "warning",
       title: `Your shipment will arrive ${formatDuration(eta.delayHours)} later than planned`,
-      body: `This is due to ${cause}. New estimated delivery: ${when}.`,
+      body: `${cause} New estimated delivery: ${when}.`,
     };
   }
   if (status === "out_for_delivery" && eta.reliability === "confirmed") {

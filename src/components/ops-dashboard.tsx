@@ -201,7 +201,7 @@ export async function OpsDashboard({ user, shipments, params }: { user: Extract<
                       </div>
                     </TableCell>
                     <TableCell>
-                      <EtaCell eta={f.eta} delivered={f.status === "delivered"} />
+                      <EtaCell eta={f.eta} delivered={f.status === "delivered"} stale={f.stale} />
                     </TableCell>
                     <TableCell className="max-w-64 pr-4 whitespace-normal">
                       {action.kind === "none" ? (

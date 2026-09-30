@@ -98,22 +98,32 @@ export function etaText(eta: EtaPrediction, delivered: boolean): { main: string;
     return { main: `${dayLabel(eta.earliest)}, ${formatTime(eta.earliest)}–${formatTime(eta.latest)}` };
   }
   const range = formatDateRange(eta.earliest, eta.latest);
-  return { main: dayLabel(eta.expected), sub: range.includes("–") ? `Range ${range}` : undefined };
+  // Late by hours: the day alone can match the promised day ("9 Oct · 12 hours late"), so show the time too.
+  const main = isLate(eta) && eta.delayHours < 24 ? `${dayLabel(eta.expected)}, ${formatTime(eta.expected)}` : dayLabel(eta.expected);
+  return { main, sub: range.includes("–") ? `Range ${range}` : undefined };
 }
 
-export function DelayNote({ eta }: { eta: EtaPrediction }) {
+/** Stale data can show a delay, but never "On time": that would only echo the plan back. */
+export function DelayNote({ eta, stale = false }: { eta: EtaPrediction; stale?: boolean }) {
   if (isLate(eta)) return <span className="text-xs font-medium text-red-700">{formatDuration(eta.delayHours)} late</span>;
+  if (stale) {
+    return (
+      <span className="text-xs font-medium text-amber-700" title="No recent operator update, so we can't confirm it is on time">
+        Unconfirmed
+      </span>
+    );
+  }
   return <span className="text-xs text-emerald-700">On time</span>;
 }
 
-export function EtaCell({ eta, delivered }: { eta: EtaPrediction; delivered: boolean }) {
+export function EtaCell({ eta, delivered, stale }: { eta: EtaPrediction; delivered: boolean; stale?: boolean }) {
   const t = etaText(eta, delivered);
   return (
     <div className="space-y-1">
       <div className="font-medium">{t.main}</div>
       <div className="flex flex-wrap items-center gap-1.5">
         <ReliabilityBadge reliability={eta.reliability} />
-        {!delivered && <DelayNote eta={eta} />}
+        {!delivered && <DelayNote eta={eta} stale={stale} />}
       </div>
     </div>
   );

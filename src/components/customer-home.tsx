@@ -67,7 +67,7 @@ export async function CustomerHome({ user, shipments }: { user: Extract<User, { 
                   <div className="flex flex-wrap items-center gap-3">
                     <ReliabilityBadge reliability={f.eta.reliability} />
                     {f.eta.reliability === "estimated" && <ConfidenceMeter confidence={f.eta.confidence} />}
-                    {!delivered && <DelayNote eta={f.eta} />}
+                    {!delivered && <DelayNote eta={f.eta} stale={f.stale} />}
                   </div>
                 </CardContent>
               </Card>
