@@ -38,7 +38,7 @@ The app runs on a fixed demo clock (**Wed 7 Oct 2026, 09:00 Madrid**), so every 
    - SHP-1003: stale, no update for 4 days → _contact operator_. It is shown as "Unconfirmed", never "On time".
    - SHP-1016: its leg is 2 hours overdue and the operator gave no revised ETA, so the estimate is a day with a range at _medium_ confidence, not a time of day.
    - SHP-1014: undocumented operator code, shown as "Unrecognised update" instead of being guessed. The AI suggests a likely meaning (_Umladung_ = transshipment) without applying it, the ETA drops to medium confidence and ops is asked to check it with the operator.
-6. **Switch "Viewing as" to Claire (Solenne Équipements).** She sees only her own shipments, proactive notices, and the delivery window exactly as the courier sent it (_Today, 09:00–11:00 CEST · Confirmed_) with a map of the positions the courier reported for the parcel out for delivery. Switch to Diego (Oskendra México): the port-delay warning for PO-12402 appears only after ops has sent it.
+6. **Switch "Viewing as" to Claire (Solenne Équipements).** She sees only her own shipments, proactive notices, and the delivery window exactly as the courier sent it (_Today, 09:00–11:00 CEST · Confirmed_) with a map of the last position the courier reported for the parcel out for delivery. Switch to Diego (Oskendra México): the port-delay warning for PO-12402 appears only after ops has sent it.
 7. **Switch to Tomáš (Brno).** Same dashboard, limited to one site's perimeter.
 
 ## How it is built

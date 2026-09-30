@@ -334,7 +334,7 @@ function SimulateCard({ shipment, received }: { shipment: TrackedShipment; recei
   );
 }
 
-/** Positions are what the courier reported, not a live feed: the card says who reported them and when. */
+/** The last position the courier reported, not a live feed: the card says who reported it and when. */
 function MapCard({ shipment }: { shipment: TrackedShipment }) {
   const last = shipment.positions!.at(-1)!;
   const operator = OPERATORS[shipment.legs.at(-1)!.operatorId].name;
@@ -343,15 +343,11 @@ function MapCard({ shipment }: { shipment: TrackedShipment }) {
     <Card size="sm">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          Delivery route <ReliabilityBadge reliability="confirmed" />
+          Last reported position <ReliabilityBadge reliability="confirmed" />
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <DeliveryMap
-          positions={shipment.positions!}
-          destination={customerOf(shipment).place}
-          lastLabel={`Reported ${formatTime(last.at)}`}
-        />
+        <DeliveryMap position={last} label={`Reported ${formatTime(last.at)}`} />
         <p className="mt-2 text-xs text-muted-foreground" data-testid="map-source">
           Reported by {operator} at {reportedAt}. Shown only while out for delivery.
         </p>
