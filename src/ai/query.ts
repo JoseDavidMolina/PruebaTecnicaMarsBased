@@ -1,4 +1,4 @@
-import { addHours, DEMO_NOW } from "@/lib/clock";
+import { DEMO_NOW, DISPLAY_TZ, startOfDay, zonedParts } from "@/lib/clock";
 import { OPERATORS } from "@/domain/operators";
 import type { NormalizedStatus, OperatorId, TrackedShipment } from "@/domain/types";
 import { CUSTOMERS, SITES } from "@/data/reference";
@@ -60,17 +60,18 @@ const STOPWORDS = new Set(
   "a all an and any are at about by find for from get going how in is it list me my of on or order orders please s show shipment shipments status the there to what whats where which with".split(" "),
 );
 
-function dateWindow(text: string, now: Date): { range: { from: string; to: string }; chip: string } | undefined {
-  const day = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const monday = addHours(day, -24 * ((day.getUTCDay() + 6) % 7));
-  const windows: [RegExp, string, number, string][] = [
-    [/\btoday\b/, day.toISOString(), 24, "Arriving today"],
-    [/\btomorrow\b/, addHours(day, 24), 24, "Arriving tomorrow"],
-    [/\bthis week\b/, monday, 24 * 7, "Arriving this week"],
-    [/\bnext week\b/, addHours(monday, 24 * 7), 24 * 7, "Arriving next week"],
+// Calendar days and weeks (Monday to Monday) in the display zone, the same days the UI shows.
+export function dateWindow(text: string, now: Date): { range: { from: string; to: string }; chip: string } | undefined {
+  const { y, m, d } = zonedParts(now, DISPLAY_TZ);
+  const monday = -((new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7); // days back to this week's Monday
+  const windows: [RegExp, number, number, string][] = [
+    [/\btoday\b/, 0, 1, "Arriving today"],
+    [/\btomorrow\b/, 1, 2, "Arriving tomorrow"],
+    [/\bthis week\b/, monday, monday + 7, "Arriving this week"],
+    [/\bnext week\b/, monday + 7, monday + 14, "Arriving next week"],
   ];
   const hit = windows.find(([re]) => re.test(text));
-  return hit && { range: { from: hit[1], to: addHours(hit[1], hit[2]) }, chip: hit[3] };
+  return hit && { range: { from: startOfDay(now, hit[1]), to: startOfDay(now, hit[2]) }, chip: hit[3] };
 }
 
 export function parseQuery(text: string, now: Date = DEMO_NOW): ShipmentQuery {

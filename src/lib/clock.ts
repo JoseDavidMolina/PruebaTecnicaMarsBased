@@ -67,5 +67,11 @@ export function fromZoned({ y, m, d, hh, mm }: WallClock, timeZone: string): str
   return new Date(asUtc - offsetMinutes(first, timeZone) * MINUTE).toISOString();
 }
 
-export const isSameDay =(a: string | Date, b: string | Date): boolean =>
+/** Midnight in DISPLAY_TZ that starts the calendar day `days` after the one containing `date`. */
+export const startOfDay = (date: string | Date, days = 0): string => {
+  const { y, m, d } = zonedParts(date, DISPLAY_TZ);
+  return fromZoned({ y, m, d: d + days, hh: 0, mm: 0 }, DISPLAY_TZ);
+};
+
+export const isSameDay = (a: string | Date, b: string | Date): boolean =>
   formatDate(new Date(a).toISOString()) === formatDate(new Date(b).toISOString());

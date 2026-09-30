@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SHIPMENTS } from "@/data";
-import { matchQuery, parseQuery } from "./query";
+import { dateWindow, matchQuery, parseQuery } from "./query";
 import { factsFor } from "./service";
 
 const search = (text: string) => {
@@ -14,7 +14,7 @@ describe("parseQuery", () => {
     expect(q).toMatchObject({
       countries: ["FR"],
       flags: ["late"],
-      eta: { from: "2026-10-05T00:00:00.000Z", to: "2026-10-12T00:00:00.000Z" }, // Monday to Monday
+      eta: { from: "2026-10-04T22:00:00.000Z", to: "2026-10-11T22:00:00.000Z" }, // Monday to Monday, Madrid time
       unparsed: [],
     });
     expect(q.interpretedAs).toEqual(["Arriving this week", "Running late", "To France"]);
@@ -37,6 +37,23 @@ describe("parseQuery", () => {
 
   it("reports the words it did not understand instead of guessing", () => {
     expect(parseQuery("shipments to Narnia by dragon").unparsed).toEqual(["narnia", "dragon"]);
+  });
+});
+
+describe("dateWindow", () => {
+  const range = (text: string, now: string) => dateWindow(text, new Date(now))?.range;
+
+  it("uses the Madrid calendar day, not the UTC one", () => {
+    // 23:30 UTC on 7 Oct is already 01:30 on 8 Oct in Madrid.
+    expect(range("today", "2026-10-07T23:30:00Z")).toEqual({ from: "2026-10-07T22:00:00.000Z", to: "2026-10-08T22:00:00.000Z" });
+    expect(range("tomorrow", "2026-10-07T21:30:00Z")).toEqual({ from: "2026-10-07T22:00:00.000Z", to: "2026-10-08T22:00:00.000Z" });
+  });
+
+  it("starts the week on Monday in Madrid, across the DST switch", () => {
+    // Sunday 11 Oct 22:30 UTC is Monday 12 Oct in Madrid: a new week.
+    expect(range("this week", "2026-10-11T22:30:00Z")).toEqual({ from: "2026-10-11T22:00:00.000Z", to: "2026-10-18T22:00:00.000Z" });
+    // The week of 19 Oct ends after clocks go back on 25 Oct: Monday 26 Oct starts at 23:00 UTC.
+    expect(range("this week", "2026-10-21T10:00:00Z")).toEqual({ from: "2026-10-18T22:00:00.000Z", to: "2026-10-25T23:00:00.000Z" });
   });
 });
 

@@ -1,4 +1,4 @@
-import { DEMO_NOW, formatDate, formatDateRange, formatDateTime, formatDuration, formatTime, hoursBetween } from "@/lib/clock";
+import { DEMO_NOW, formatDate, formatDateRange, formatDateTime, formatDuration, formatTime, startOfDay } from "@/lib/clock";
 import { OPERATORS } from "@/domain/operators";
 import { activeLeg, currentStatus, hoursSinceUpdate, isStale, lastMilestone } from "@/domain/timeline";
 import { DOCUMENT_LABELS, type Milestone, type NormalizedStatus, type TrackedShipment } from "@/domain/types";
@@ -109,9 +109,10 @@ export function summarizeDay(shipments: TrackedShipment[], now: Date = DEMO_NOW)
     stale: flagged("stale"),
     exceptions: flagged("exception"),
     outForDelivery: open.filter(({ s }) => currentStatus(s) === "out_for_delivery").length,
+    // Same calendar day (Madrid) as the "delivered today" search the KPI opens.
     deliveredToday: shipments.filter((s) => {
       const d = s.milestones.findLast((m) => m.status === "delivered");
-      return d && hoursBetween(d.at, now) <= 24;
+      return d && d.at >= startOfDay(now) && d.at <= now.toISOString();
     }).length,
   };
 

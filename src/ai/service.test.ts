@@ -17,9 +17,14 @@ describe("summarizeDay", () => {
   it("writes the ops headline and ranks the exception queue", () => {
     const summary = summarizeDay(SHIPMENTS);
     expect(summary.headline).toBe(
-      "Today: 5 at risk (1 held at customs, 1 delayed at port, 1 with no recent update, 1 with a delivery incident, 1 running late), 1 out for delivery, 2 delivered.",
+      "Today: 5 at risk (1 held at customs, 1 delayed at port, 1 with no recent update, 1 with a delivery incident, 1 running late), 1 out for delivery, 1 delivered.",
     );
     expect(summary.items.map((i) => i.shipmentId)).toEqual(["shp-1001", "shp-1010", "shp-1002", "shp-1003", "shp-1016"]);
+  });
+
+  it("counts deliveries of today's Madrid calendar day, not the last 24 hours", () => {
+    // SHP-1005 was delivered at 13:00 yesterday (within 24 h); SHP-1015 at 07:00 today.
+    expect(summarizeDay(SHIPMENTS).counts.deliveredToday).toBe(1);
   });
 });
 
