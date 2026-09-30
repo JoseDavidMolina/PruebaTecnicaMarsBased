@@ -90,6 +90,7 @@ test("customer: own perimeter, proactive notices and the reported delivery route
   // Another customer's shipment does not exist for Claire.
   const response = await page.goto("/shipments/shp-1001");
   expect(response?.status()).toBe(404);
+  await expect(page.getByRole("heading", { name: "Not found" })).toBeVisible();
 });
 
 test("nothing scrolls sideways at 390 px, with the full header showing", async ({ page, context, baseURL }) => {
