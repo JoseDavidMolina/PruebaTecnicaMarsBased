@@ -38,19 +38,20 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             </span>
             {/* Off in e2e runs (playwright.config.ts) so a refresh never lands mid-assertion. */}
             {user.role === "ops" && process.env.LIVE_REFRESH !== "off" && <LiveRefresh seconds={60} />}
-            <div className="ml-auto flex items-center gap-2">
+            {/* Full width on phones so the switcher shrinks instead of pushing the page sideways. */}
+            <div className="flex w-full min-w-0 items-center justify-end gap-2 sm:ml-auto sm:w-auto">
               {simulated.length + done.length > 0 && (
                 <form action={resetDemo}>
-                  <SubmitButton pendingText="Resetting…" className="text-muted-foreground hover:bg-muted">
+                  <SubmitButton pendingText="Resetting…" className="shrink-0 px-2 text-muted-foreground hover:bg-muted">
                     <RotateCcw /> Reset demo
                   </SubmitButton>
                 </form>
               )}
-              <form action={switchUser} className="flex items-center gap-2">
-                <label htmlFor="userId" className="text-xs text-muted-foreground">
+              <form action={switchUser} className="flex min-w-0 flex-1 items-center gap-2 sm:flex-initial">
+                <label htmlFor="userId" className="shrink-0 text-xs text-muted-foreground">
                   Viewing as
                 </label>
-                <AutoSubmitSelect id="userId" name="userId" defaultValue={user.id} key={user.id} className="max-w-72">
+                <AutoSubmitSelect id="userId" name="userId" defaultValue={user.id} key={user.id} className="min-w-0 flex-1 sm:max-w-72">
                   <optgroup label="Operations">
                     {ops.map((u) => (
                       <option key={u.id} value={u.id}>{u.name}</option>

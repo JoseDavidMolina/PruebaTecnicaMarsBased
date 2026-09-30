@@ -89,3 +89,25 @@ test("customer: own perimeter, proactive notices and the live delivery map", asy
   const response = await page.goto("/shipments/shp-1001");
   expect(response?.status()).toBe(404);
 });
+
+test("nothing scrolls sideways at 390 px, with the full header showing", async ({ page, context, baseURL }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  // An applied update brings the Reset button into the header, its widest state.
+  await context.addCookies([{ name: "demo-sim", value: "shp-1002", url: baseURL! }]);
+  const pages: [string, string][] = [
+    ["u-ops-all", "/"],
+    ["u-ops-all", "/shipments/shp-1002"],
+    ["u-cust-oskendra-mx", "/"],
+    ["u-cust-solenne", "/shipments/shp-1004"],
+  ];
+  for (const [user, path] of pages) {
+    await context.addCookies([{ name: "demo-user", value: user, url: baseURL! }]);
+    await page.goto(path);
+    await expect(page.getByRole("button", { name: "Reset demo" })).toBeVisible();
+    const { scroll, client } = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth,
+      client: document.documentElement.clientWidth,
+    }));
+    expect(scroll, `${user} ${path}`).toBe(client);
+  }
+});
