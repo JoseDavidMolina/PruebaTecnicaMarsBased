@@ -16,7 +16,12 @@ import { ACTION_ICON, ActionControl, AiTag, EtaCell, ModeTrail, Pill, RiskBadge,
 
 export type DashboardParams = { q?: string; site?: string; op?: string; view?: string };
 
-const EXAMPLES = ["shipments to France this week running late", "what's going on with order 12345?", "sea shipments delayed at port", "Alpenweg shipments from Brno"];
+const EXAMPLES = [
+  "shipments to France this week running late",
+  "what's going on with order 12345?",
+  "sea shipments delayed at port",
+  "Alpenweg shipments from Brno",
+];
 
 const tabClass = (active: boolean) => cn("-mb-px pb-2", active ? "border-b-2 border-slate-900 font-medium" : "text-muted-foreground");
 
@@ -41,7 +46,9 @@ export async function OpsDashboard({
   const filtered = facts
     .filter((f) => !params.site || f.shipment.originSiteId === params.site)
     .filter((f) => !params.op || f.shipment.legs.some((l) => l.operatorId === params.op));
-  const actions = new Map(await Promise.all(filtered.map(async (f) => [f.shipment.id, await ai.suggestNextAction(f.shipment, f.risk)] as const)));
+  const actions = new Map(
+    await Promise.all(filtered.map(async (f) => [f.shipment.id, await ai.suggestNextAction(f.shipment, f.risk)] as const)),
+  );
   const handled = (f: ShipmentFacts) => done.includes(doneKey(f.shipment.id, actions.get(f.shipment.id)!.kind));
   // Managing by exception: once ops has acted on the proposed action, the shipment leaves the queue until something new happens.
   const atRisk = filtered.filter((f) => f.risk.level !== "low");
@@ -80,7 +87,8 @@ export async function OpsDashboard({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Good morning, {user.name.split(" ")[0]}</h1>
         <p className="text-sm text-muted-foreground">
-          {formatLongDate(DEMO_NOW.toISOString())} · {shipments.length} active and recent shipments from {new Intl.ListFormat("en").format(sites.map((s) => s.name))}
+          {formatLongDate(DEMO_NOW.toISOString())} · {shipments.length} active and recent shipments from{" "}
+          {new Intl.ListFormat("en").format(sites.map((s) => s.name))}
         </p>
       </div>
 
@@ -95,7 +103,11 @@ export async function OpsDashboard({
           </p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
             {kpis.map((k) => (
-              <Link key={k.label} href={k.href} className="rounded-lg border bg-white px-3 py-2 transition-colors hover:border-violet-300 hover:bg-violet-50/50">
+              <Link
+                key={k.label}
+                href={k.href}
+                className="rounded-lg border bg-white px-3 py-2 transition-colors hover:border-violet-300 hover:bg-violet-50/50"
+              >
                 <div className={cn("text-xl font-semibold tabular-nums", k.value === 0 ? "text-muted-foreground" : k.tone)}>{k.value}</div>
                 <div className="text-xs text-muted-foreground">{k.label}</div>
               </Link>
@@ -123,16 +135,23 @@ export async function OpsDashboard({
             <AutoSubmitSelect name="site" defaultValue={params.site ?? ""} aria-label="Origin site">
               <option value="">All sites</option>
               {sites.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
               ))}
             </AutoSubmitSelect>
             <AutoSubmitSelect name="op" defaultValue={params.op ?? ""} aria-label="Operator">
               <option value="">All operators</option>
               {operatorIds.map((id) => (
-                <option key={id} value={id}>{OPERATORS[id].name}</option>
+                <option key={id} value={id}>
+                  {OPERATORS[id].name}
+                </option>
               ))}
             </AutoSubmitSelect>
-            <button type="submit" className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-900 px-3 text-sm font-medium text-white hover:bg-slate-800">
+            <button
+              type="submit"
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-900 px-3 text-sm font-medium text-white hover:bg-slate-800"
+            >
               <Search className="size-4" /> Search
             </button>
           </form>
@@ -140,7 +159,15 @@ export async function OpsDashboard({
           {query ? (
             <div className="flex flex-wrap items-center gap-1.5 text-sm" data-testid="query-interpretation">
               <span className="text-muted-foreground">Understood as</span>
-              {query.interpretedAs.length ? query.interpretedAs.map((chip) => <Pill key={chip} tone="violet">{chip}</Pill>) : <Pill>nothing specific</Pill>}
+              {query.interpretedAs.length ? (
+                query.interpretedAs.map((chip) => (
+                  <Pill key={chip} tone="violet">
+                    {chip}
+                  </Pill>
+                ))
+              ) : (
+                <Pill>nothing specific</Pill>
+              )}
               {query.unparsed.length > 0 && (
                 <Pill tone="amber" title="Words the assistant did not use to filter">
                   Ignored: {query.unparsed.join(", ")}
@@ -168,7 +195,11 @@ export async function OpsDashboard({
             <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
               Try:
               {EXAMPLES.map((e) => (
-                <Link key={e} href={href({ q: e })} className="rounded-full border px-2 py-0.5 hover:border-violet-300 hover:text-foreground">
+                <Link
+                  key={e}
+                  href={href({ q: e })}
+                  className="rounded-full border px-2 py-0.5 hover:border-violet-300 hover:text-foreground"
+                >
                   {e}
                 </Link>
               ))}

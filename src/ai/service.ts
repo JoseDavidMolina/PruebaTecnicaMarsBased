@@ -58,7 +58,11 @@ export function suggestNextAction(s: TrackedShipment, risk: RiskAssessment): Nex
     };
   }
   if (has("customs_hold")) {
-    return { kind: "contact_operator", label: `Ask ${operator} why customs is holding it`, rationale: "Held at customs with every document on file." };
+    return {
+      kind: "contact_operator",
+      label: `Ask ${operator} why customs is holding it`,
+      rationale: "Held at customs with every document on file.",
+    };
   }
   if (has("exception")) {
     return { kind: "contact_operator", label: `Contact ${operator} about the incident`, rationale: risk.reasons[0] };
@@ -224,7 +228,8 @@ export function answerQuery(query: ShipmentQuery, matches: ShipmentFacts[]): Que
     const action = suggestNextAction(s, f.risk);
     const text = [
       `${s.reference} (order ${s.orderRef}, ${customerOf(s).name}) is ${STATUS_PHRASE[f.status]}.`,
-      last && `Last update from ${OPERATORS[last.operatorId].name}: ${formatDateTime(last.at)} ${zoneName(last.at)}${last.location ? ` (${last.location})` : ""}.`,
+      last &&
+        `Last update from ${OPERATORS[last.operatorId].name}: ${formatDateTime(last.at)} ${zoneName(last.at)}${last.location ? ` (${last.location})` : ""}.`,
       ...f.risk.reasons.filter((r) => !r.startsWith("ETA is") && !r.startsWith("Low confidence")), // the ETA sentence covers these
       etaSentence(f),
       action.kind !== "none" && `Suggested next step: ${action.label}.`,
@@ -240,8 +245,11 @@ export function answerQuery(query: ShipmentQuery, matches: ShipmentFacts[]): Que
   const worst = attention[0];
   const text = [
     `${matches.length} shipments match.`,
-    attention.length ? `${attention.length} ${attention.length === 1 ? "needs" : "need"} attention${late ? `, ${late} running late` : ""}.` : "None needs attention.",
-    worst && `Most urgent: ${worst.shipment.reference}, ${STATUS_PHRASE[worst.status]}. ${suggestNextAction(worst.shipment, worst.risk).label}.`,
+    attention.length
+      ? `${attention.length} ${attention.length === 1 ? "needs" : "need"} attention${late ? `, ${late} running late` : ""}.`
+      : "None needs attention.",
+    worst &&
+      `Most urgent: ${worst.shipment.reference}, ${STATUS_PHRASE[worst.status]}. ${suggestNextAction(worst.shipment, worst.risk).label}.`,
   ]
     .filter(Boolean)
     .join(" ");

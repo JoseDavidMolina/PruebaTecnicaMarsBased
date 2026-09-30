@@ -33,7 +33,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               </span>
               Oskendra <span className="font-normal text-muted-foreground">Shipment Tracker</span>
             </Link>
-            <span className="text-xs text-muted-foreground" title="Fixed clock so the demo is identical on every run. All times are Madrid time.">
+            <span
+              className="text-xs text-muted-foreground"
+              title="Fixed clock so the demo is identical on every run. All times are Madrid time."
+            >
               Demo clock · {formatDateTime(DEMO_NOW.toISOString())} {zoneName()}
             </span>
             {/* Off in e2e runs (playwright.config.ts) so a refresh never lands mid-assertion. */}
@@ -54,12 +57,16 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 <AutoSubmitSelect id="userId" name="userId" defaultValue={user.id} key={user.id} className="min-w-0 flex-1 sm:max-w-72">
                   <optgroup label="Operations">
                     {ops.map((u) => (
-                      <option key={u.id} value={u.id}>{u.name}</option>
+                      <option key={u.id} value={u.id}>
+                        {u.name}
+                      </option>
                     ))}
                   </optgroup>
                   <optgroup label="Customers">
                     {customers.map((u) => (
-                      <option key={u.id} value={u.id}>{u.name}</option>
+                      <option key={u.id} value={u.id}>
+                        {u.name}
+                      </option>
                     ))}
                   </optgroup>
                 </AutoSubmitSelect>

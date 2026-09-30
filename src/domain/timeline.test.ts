@@ -36,10 +36,7 @@ const shipment = (legs: Leg[], events: RawEvent[]): Shipment => ({
 describe("track", () => {
   it("sorts milestones and treats 'delivered' on a non-final leg as a handover", () => {
     const s = track(
-      shipment(
-        [leg(1, "road", { to: { ...place, portCode: "ESVLC" } }), leg(2, "sea")],
-        [tv("L1", 60, 10), tv("L1", 20, 30)],
-      ),
+      shipment([leg(1, "road", { to: { ...place, portCode: "ESVLC" } }), leg(2, "sea")], [tv("L1", 60, 10), tv("L1", 20, 30)]),
     );
     expect(s.milestones.map((m) => m.status)).toEqual(["picked_up", "at_port"]);
     expect(s.milestones[1].rawCode).toBe("60");

@@ -24,7 +24,8 @@ export const operatorMessage = (shipmentId: string, message: string): RawEvent |
  */
 export function nextOperatorMessage(s: TrackedShipment, received: readonly string[]): OperatorMessage | undefined {
   if (!operatorMessage(s.id, "update") || received.includes("update")) return undefined;
-  if (operatorMessage(s.id, "hold") && s.documents.some((d) => d.status === "missing")) return received.includes("hold") ? undefined : "hold";
+  if (operatorMessage(s.id, "hold") && s.documents.some((d) => d.status === "missing"))
+    return received.includes("hold") ? undefined : "hold";
   return "update";
 }
 

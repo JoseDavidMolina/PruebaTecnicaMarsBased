@@ -4,7 +4,7 @@ Clickable prototype for the MarsBased technical test. It gives consolidated, rel
 
 Frontend only. All data is synthetic, and the AI is simulated with deterministic mock logic behind a real interface.
 
-The write-up (approach, where AI adds value, path to production) is here: *(link to be added)*.
+The write-up (approach, where AI adds value, path to production) is here: _(link to be added)_.
 
 ## Run it
 
@@ -17,27 +17,28 @@ pnpm dev            # http://localhost:3000
 
 `dev` and `build` pass `--webpack` because Turbopack needs Next's native SWC binary, which Windows Application Control blocks on the author's machine; webpack falls back to WASM. On other machines you can drop the flag.
 
-| Command | What it does |
-| --- | --- |
-| `pnpm test` | Unit tests (Vitest): normalization, ETA, risk, query parser, demo scenarios |
-| `pnpm test:e2e` | Playwright run of the demo flow (first time: `pnpm exec playwright install chromium`) |
-| `pnpm lint` / `pnpm typecheck` | ESLint / TypeScript (strict) |
-| `pnpm build` | Production build |
+| Command                        | What it does                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------- |
+| `pnpm test`                    | Unit tests (Vitest): normalization, ETA, risk, query parser, demo scenarios           |
+| `pnpm test:e2e`                | Playwright run of the demo flow (first time: `pnpm exec playwright install chromium`) |
+| `pnpm lint` / `pnpm typecheck` | ESLint / TypeScript (strict)                                                          |
+| `pnpm format` / `format:check` | Prettier: format / check the whole repo                                               |
+| `pnpm build`                   | Production build                                                                      |
 
-The app runs on a fixed demo clock (**Wed 7 Oct 2026, 09:00 Madrid**), so every run looks the same. Every time is shown in Madrid time and labelled with its zone (*09:00 CEST*), whoever is viewing.
+The app runs on a fixed demo clock (**Wed 7 Oct 2026, 09:00 Madrid**), so every run looks the same. Every time is shown in Madrid time and labelled with its zone (_09:00 CEST_), whoever is viewing.
 
 ## Five-minute demo
 
-1. **Operations (Marta, control tower).** The AI daily briefing summarizes the day: *Today: 5 at risk (1 held at customs, 1 delayed at port, 1 with no recent update, 1 with a delivery incident, 1 running late), 1 out for delivery, 1 delivered.* "Today" is the Madrid calendar day, and each KPI opens the matching search with the same count. With a site or operator filter, the briefing and KPIs describe only what the filter shows (*· Brno Plant only*). The header shows *Live · refreshes every 60 s*. Below it, the exception queue is sorted by AI risk score, with a proposed action per shipment that can be carried out in one click. A handled shipment leaves the queue ("1 handled today", also added to the briefing) until a new operator update reopens it.
-2. **Search in plain English.** Try *"what's going on with order 12345?"* or *"shipments to France this week running late"*. The assistant answers in a sentence built only from the shipment's facts, the chips show how the query was interpreted, and words it could not use are listed, never silently guessed. A typo in a country or operator is used but shown (*"To France (from 'frnace')"*), and a query it cannot understand at all (*"shipments to Narnia by dragon"*) matches nothing and says so instead of listing all 20.
-3. **SHP-1002, multimodal and delayed at port.** The unified timeline merges three operators (road → sea → road) and folds repeated reports ("At sea" ×3) into one step you can expand. Each step shows the operator's raw status (`Code 60`, `ANC · MXVER · MV Aurora Tide`) next to our normalized one, and the header says how fresh the data is. The ETA is *estimated*, with range and confidence, and explains why. The risk card proposes notifying the customer. The drafted notice is marked *Not visible to the customer yet*; *Send notice* makes it *Sent · visible to the customer*.
+1. **Operations (Marta, control tower).** The AI daily briefing summarizes the day: _Today: 5 at risk (1 held at customs, 1 delayed at port, 1 with no recent update, 1 with a delivery incident, 1 running late), 1 out for delivery, 1 delivered._ "Today" is the Madrid calendar day, and each KPI opens the matching search with the same count. With a site or operator filter, the briefing and KPIs describe only what the filter shows (_· Brno Plant only_). The header shows _Live · refreshes every 60 s_. Below it, the exception queue is sorted by AI risk score, with a proposed action per shipment that can be carried out in one click. A handled shipment leaves the queue ("1 handled today", also added to the briefing) until a new operator update reopens it.
+2. **Search in plain English.** Try _"what's going on with order 12345?"_ or _"shipments to France this week running late"_. The assistant answers in a sentence built only from the shipment's facts, the chips show how the query was interpreted, and words it could not use are listed, never silently guessed. A typo in a country or operator is used but shown (_"To France (from 'frnace')"_), and a query it cannot understand at all (_"shipments to Narnia by dragon"_) matches nothing and says so instead of listing all 20.
+3. **SHP-1002, multimodal and delayed at port.** The unified timeline merges three operators (road → sea → road) and folds repeated reports ("At sea" ×3) into one step you can expand. Each step shows the operator's raw status (`Code 60`, `ANC · MXVER · MV Aurora Tide`) next to our normalized one, and the header says how fresh the data is. The ETA is _estimated_, with range and confidence, and explains why. The risk card proposes notifying the customer. The drafted notice is marked _Not visible to the customer yet_; _Send notice_ makes it _Sent · visible to the customer_.
 4. **Simulate operator update.** The vessel berths, a new event arrives in Blue Meridian's own format, and the ETA, risk and customer notice are all recalculated (2 days late → 12 hours late). The new figures go back to draft until ops sends them again. "Reset demo" in the header replays it.
 5. **Other heroes:**
-   - SHP-1001: held at customs, invoice missing → *Upload*. The invoice becomes available and the next action moves on to asking the operator why customs still holds it. *Simulate operator update* then brings the customs release; before the upload, Transvolta reports the hold again. A message already received never changes: upload afterwards and simulate once more, and the release arrives as a new event.
-   - SHP-1003: stale, no update for 4 days → *contact operator*. It is shown as "Unconfirmed", never "On time".
-   - SHP-1016: its leg is 2 hours overdue and the operator gave no revised ETA, so the estimate is a day with a range at *medium* confidence, not a time of day.
-   - SHP-1014: undocumented operator code, shown as "Unrecognised update" instead of being guessed. The AI suggests a likely meaning (*Umladung* = transshipment) without applying it, the ETA drops to medium confidence and ops is asked to check it with the operator.
-6. **Switch "Viewing as" to Claire (Solenne Équipements).** She sees only her own shipments, proactive notices, and the delivery window exactly as the courier sent it (*Today, 09:00–11:00 CEST · Confirmed*) with a map of the positions the courier reported for the parcel out for delivery. Switch to Diego (Oskendra México): the port-delay warning for PO-12402 appears only after ops has sent it.
+   - SHP-1001: held at customs, invoice missing → _Upload_. The invoice becomes available and the next action moves on to asking the operator why customs still holds it. _Simulate operator update_ then brings the customs release; before the upload, Transvolta reports the hold again. A message already received never changes: upload afterwards and simulate once more, and the release arrives as a new event.
+   - SHP-1003: stale, no update for 4 days → _contact operator_. It is shown as "Unconfirmed", never "On time".
+   - SHP-1016: its leg is 2 hours overdue and the operator gave no revised ETA, so the estimate is a day with a range at _medium_ confidence, not a time of day.
+   - SHP-1014: undocumented operator code, shown as "Unrecognised update" instead of being guessed. The AI suggests a likely meaning (_Umladung_ = transshipment) without applying it, the ETA drops to medium confidence and ops is asked to check it with the operator.
+6. **Switch "Viewing as" to Claire (Solenne Équipements).** She sees only her own shipments, proactive notices, and the delivery window exactly as the courier sent it (_Today, 09:00–11:00 CEST · Confirmed_) with a map of the positions the courier reported for the parcel out for delivery. Switch to Diego (Oskendra México): the port-delay warning for PO-12402 appears only after ops has sent it.
 7. **Switch to Tomáš (Brno).** Same dashboard, limited to one site's perimeter.
 
 ## How it is built

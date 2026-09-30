@@ -47,7 +47,10 @@ describe("simulateUpdate", () => {
   });
 
   it("reopens the decisions ops made, but keeps an uploaded document uploaded", async () => {
-    jar.set(DONE_COOKIE, [doneKey("shp-1001", "upload_document"), doneKey("shp-1001", "notify_customer"), doneKey("shp-1002", "notify_customer")].join(","));
+    jar.set(
+      DONE_COOKIE,
+      [doneKey("shp-1001", "upload_document"), doneKey("shp-1001", "notify_customer"), doneKey("shp-1002", "notify_customer")].join(","),
+    );
     await simulate("u-ops-all", "shp-1001");
     expect(jar.get(DONE_COOKIE)).toBe("shp-1001:upload_document,shp-1002:notify_customer");
     // With the invoice on file, the operator's update is the customs release.
@@ -96,7 +99,10 @@ describe("operator messages, once received, never change", () => {
 
   it("ignores tampered cookie values without breaking the page", async () => {
     jar.set(USER_COOKIE, "u-ops-all");
-    jar.set(SIM_COOKIE, "shp-9999:update,shp-1001:bogus,shp-1005:update,shp-1001,:update,garbage,,shp-1002:update:x,constructor:update,shp-1003:update,shp-1003:update");
+    jar.set(
+      SIM_COOKIE,
+      "shp-9999:update,shp-1001:bogus,shp-1005:update,shp-1001,:update,garbage,,shp-1002:update:x,constructor:update,shp-1003:update,shp-1003:update",
+    );
     const { simulated, shipments } = await getDemo();
     expect(simulated).toEqual(["shp-1003:update"]);
     expect(await messages1001()).toEqual([]);

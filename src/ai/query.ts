@@ -152,7 +152,20 @@ export function parseQuery(text: string, now: Date = DEMO_NOW): ShipmentQuery {
     return false;
   });
 
-  return { text, ref: refMatch?.[1], statuses, flags, countries, mode, operatorIds, siteIds, customerIds, eta: window?.range, interpretedAs, unparsed };
+  return {
+    text,
+    ref: refMatch?.[1],
+    statuses,
+    flags,
+    countries,
+    mode,
+    operatorIds,
+    siteIds,
+    customerIds,
+    eta: window?.range,
+    interpretedAs,
+    unparsed,
+  };
 }
 
 /** Only unknown words: matching everything would pretend to answer, so the query matches nothing instead. */
@@ -183,7 +196,10 @@ export function matchQuery(q: ShipmentQuery, f: ShipmentFacts): boolean {
     anyOf(q.statuses, f.status) &&
     q.flags.every((flag) => flagOk[flag]) &&
     (!q.mode || s.legs.some((l) => l.mode === q.mode)) &&
-    anyOf(q.operatorIds, s.legs.map((l) => l.operatorId)) &&
+    anyOf(
+      q.operatorIds,
+      s.legs.map((l) => l.operatorId),
+    ) &&
     anyOf(q.siteIds, s.originSiteId) &&
     anyOf(q.customerIds, s.customerId) &&
     (!q.eta || (f.eta.expected >= q.eta.from && f.eta.expected < q.eta.to))

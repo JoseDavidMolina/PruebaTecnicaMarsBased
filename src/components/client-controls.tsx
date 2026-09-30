@@ -65,7 +65,10 @@ export function LiveRefresh({ seconds }: { seconds: number }) {
     return () => clearInterval(id);
   }, [router, seconds]);
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" title="The view reloads the latest operator data on its own">
+    <span
+      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+      title="The view reloads the latest operator data on its own"
+    >
       <span className="size-1.5 rounded-full bg-emerald-500" /> Live · refreshes every {seconds} s
     </span>
   );

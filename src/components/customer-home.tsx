@@ -8,16 +8,30 @@ import { Card, CardContent } from "@/components/ui/card";
 import { NoticeBanner } from "./shipment-detail";
 import { AiTag, ConfidenceMeter, DelayNote, ModeTrail, ReliabilityBadge, StatusBadge } from "./shipment-bits";
 
-export async function CustomerHome({ user, shipments, done }: { user: Extract<User, { role: "customer" }>; shipments: TrackedShipment[]; done: string[] }) {
+export async function CustomerHome({
+  user,
+  shipments,
+  done,
+}: {
+  user: Extract<User, { role: "customer" }>;
+  shipments: TrackedShipment[];
+  done: string[];
+}) {
   const facts = await Promise.all(shipments.map(loadFacts));
-  const notices = await Promise.all(facts.map(async (f) => noticeForCustomer(await ai.customerNotice(f.shipment, f.eta), f.shipment.id, done)));
+  const notices = await Promise.all(
+    facts.map(async (f) => noticeForCustomer(await ai.customerNotice(f.shipment, f.eta), f.shipment.id, done)),
+  );
   // Open shipments first, soonest arrival first; delivered ones last, most recent first.
   const order = facts
     .map((f, i) => ({ f, notice: notices[i] }))
     .sort((a, b) => {
       const da = a.f.status === "delivered";
       const db = b.f.status === "delivered";
-      return da !== db ? Number(da) - Number(db) : da ? b.f.eta.expected.localeCompare(a.f.eta.expected) : a.f.eta.expected.localeCompare(b.f.eta.expected);
+      return da !== db
+        ? Number(da) - Number(db)
+        : da
+          ? b.f.eta.expected.localeCompare(a.f.eta.expected)
+          : a.f.eta.expected.localeCompare(b.f.eta.expected);
     });
   const withNotice = order.filter((o) => o.notice);
   const company = CUSTOMERS.find((c) => c.id === user.customerId)!;
@@ -37,7 +51,11 @@ export async function CustomerHome({ user, shipments, done }: { user: Extract<Us
             Updates for you <AiTag label="Proactive" />
           </div>
           {withNotice.map(({ f, notice }) => (
-            <NoticeBanner key={f.shipment.id} notice={{ ...notice!, title: `${f.shipment.orderRef}: ${notice!.title}` }} href={`/shipments/${f.shipment.id}`} />
+            <NoticeBanner
+              key={f.shipment.id}
+              notice={{ ...notice!, title: `${f.shipment.orderRef}: ${notice!.title}` }}
+              href={`/shipments/${f.shipment.id}`}
+            />
           ))}
         </section>
       )}

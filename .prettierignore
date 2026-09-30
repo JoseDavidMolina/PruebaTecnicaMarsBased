@@ -1,0 +1,5 @@
+# Prettier already skips what .gitignore lists (node_modules, .next, review/, docs/brief.pdf…).
+pnpm-lock.yaml
+public/
+# Written and re-added by `next dev`.
+AGENTS.md

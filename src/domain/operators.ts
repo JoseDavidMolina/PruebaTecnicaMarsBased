@@ -79,7 +79,10 @@ const tarnwickSchema = z.object({
   status: z.string().min(1),
   time: z.string().regex(dmyHm),
   city: z.string(),
-  window: z.string().regex(/^\d{2}:\d{2}-\d{2}:\d{2}$/).optional(), // same day as `time`
+  window: z
+    .string()
+    .regex(/^\d{2}:\d{2}-\d{2}:\d{2}$/)
+    .optional(), // same day as `time`
 });
 const bluemeridianSchema = z.object({
   event: z.string().length(3),

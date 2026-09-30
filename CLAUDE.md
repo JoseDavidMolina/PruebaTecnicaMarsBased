@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A clickable frontend prototype of a shipment tracking app with AI features, built for the MarsBased technical test (brief: `docs/brief.pdf`, gitignored and local only, never commit it). An industrial manufacturer ships from several sites through several logistics operators, by road and sea, domestically and internationally. The app unifies what each operator reports into one reliable view, for two roles.
 
 Hard constraints from the brief:
+
 - Frontend only: no backend, database or real integrations. Everything is mocked.
 - Synthetic data only. Invent every company, operator, customer and document. Real place names are fine, real company names are not.
 - AI is simulated with mock logic, but must look and behave like the real feature.
@@ -21,6 +22,7 @@ Hard constraints from the brief:
 pnpm dev                          # dev server (webpack, see note below)
 pnpm build                        # production build
 pnpm lint                         # eslint
+pnpm format                       # prettier --write (format:check to verify); src/data RAW_SHIPMENTS is prettier-ignored on purpose
 pnpm typecheck                    # next typegen + tsc (typegen provides globals like LayoutProps)
 pnpm test                         # vitest, all unit tests
 pnpm test src/ai/risk.test.ts     # single file

@@ -16,7 +16,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubmitButton } from "./client-controls";
 import { DeliveryMap } from "./delivery-map-loader";
 import {
-  ACTION_ICON, ActionControl, AiTag, ConfidenceMeter, DelayNote, MODE_ICON, ModeTrail, Pill, ReliabilityBadge, RiskBadge, StaleBadge, STATUS, StatusBadge,
+  ACTION_ICON,
+  ActionControl,
+  AiTag,
+  ConfidenceMeter,
+  DelayNote,
+  MODE_ICON,
+  ModeTrail,
+  Pill,
+  ReliabilityBadge,
+  RiskBadge,
+  StaleBadge,
+  STATUS,
+  StatusBadge,
 } from "./shipment-bits";
 
 type Variant = "ops" | "customer";
@@ -82,7 +94,10 @@ function OperatorTrace({ m }: { m: Milestone }) {
       {" · "}
       {OPERATORS[m.operatorId].name}
       <span
-        className={cn("ml-2 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600", m.status === "unknown" && "bg-amber-100 text-amber-900")}
+        className={cn(
+          "ml-2 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600",
+          m.status === "unknown" && "bg-amber-100 text-amber-900",
+        )}
         title="Exactly what the operator sent, before normalization"
       >
         {m.rawStatus}
@@ -169,7 +184,10 @@ export function Timeline({
                 </details>
               )}
               {variant === "ops" && suggestion && (
-                <div className="mt-1.5 flex gap-2 rounded-md border border-violet-200 bg-violet-50/60 p-2 text-xs text-slate-700" data-testid="mapping-suggestion">
+                <div
+                  className="mt-1.5 flex gap-2 rounded-md border border-violet-200 bg-violet-50/60 p-2 text-xs text-slate-700"
+                  data-testid="mapping-suggestion"
+                >
                   <Sparkles className="mt-0.5 size-3.5 shrink-0 text-violet-600" />
                   <span>
                     <span className="font-medium">Likely meaning: </span>
@@ -228,7 +246,9 @@ export function EtaCard({ facts, variant }: { facts: ShipmentFacts; variant: Var
           <ReliabilityBadge reliability={eta.reliability} />
           {eta.reliability === "estimated" && <ConfidenceMeter confidence={eta.confidence} />}
           {!delivered && <DelayNote eta={eta} stale={facts.stale} />}
-          <span className="text-xs text-muted-foreground">Promised {formatDateTime(shipment.promisedDelivery)} {zoneName(shipment.promisedDelivery)}</span>
+          <span className="text-xs text-muted-foreground">
+            Promised {formatDateTime(shipment.promisedDelivery)} {zoneName(shipment.promisedDelivery)}
+          </span>
         </div>
         {variant === "ops" && (
           <p className="flex gap-2 rounded-md bg-slate-50 p-3 text-sm text-slate-700">
@@ -322,7 +342,11 @@ function MapCard({ shipment }: { shipment: TrackedShipment }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <DeliveryMap positions={shipment.positions!} destination={customerOf(shipment).place} lastLabel={`Reported ${formatTime(last.at)}`} />
+        <DeliveryMap
+          positions={shipment.positions!}
+          destination={customerOf(shipment).place}
+          lastLabel={`Reported ${formatTime(last.at)}`}
+        />
         <p className="mt-2 text-xs text-muted-foreground" data-testid="map-source">
           Reported by {operator} at {reportedAt}. Shown only while out for delivery.
         </p>
@@ -355,7 +379,9 @@ function Header({ facts, variant }: { facts: ShipmentFacts; variant: Variant }) 
       </p>
       {/* Freshness is always visible: how old is what we are showing? */}
       <p className="text-xs text-muted-foreground" data-testid="freshness">
-        {last ? `Last ${source}: ${formatDateTime(last.at)} ${zoneName(last.at)} (${formatAgo(hoursSinceUpdate(s) ?? 0)})` : "No update from the carrier yet"}
+        {last
+          ? `Last ${source}: ${formatDateTime(last.at)} ${zoneName(last.at)} (${formatAgo(hoursSinceUpdate(s) ?? 0)})`
+          : "No update from the carrier yet"}
       </p>
     </div>
   );
@@ -383,9 +409,8 @@ export async function OpsShipmentDetail({ facts, received, done }: { facts: Ship
             <CardHeader>
               <CardTitle>Unified timeline</CardTitle>
               <p className="text-xs text-muted-foreground">
-                {new Set(s.legs.map((l) => l.operatorId)).size} operator feed(s) merged. Grey tags show the raw operator status behind each normalized step.
-                {" "}
-                <TimesNote />
+                {new Set(s.legs.map((l) => l.operatorId)).size} operator feed(s) merged. Grey tags show the raw operator status behind each
+                normalized step. <TimesNote />
               </p>
             </CardHeader>
             <CardContent>
@@ -451,7 +476,12 @@ export async function OpsShipmentDetail({ facts, received, done }: { facts: Ship
             <CardContent>
               {notice ? (
                 <div className="space-y-2" data-testid="customer-view">
-                  <div className={cn("rounded-md border p-3 text-sm", notice.severity === "warning" ? "border-amber-200 bg-amber-50" : "bg-slate-50")}>
+                  <div
+                    className={cn(
+                      "rounded-md border p-3 text-sm",
+                      notice.severity === "warning" ? "border-amber-200 bg-amber-50" : "bg-slate-50",
+                    )}
+                  >
                     <div className="font-medium">{notice.title}</div>
                     <p className="mt-1 text-slate-700">{notice.body}</p>
                   </div>
@@ -463,7 +493,12 @@ export async function OpsShipmentDetail({ facts, received, done }: { facts: Ship
                         : "Not visible to the customer yet"}
                     {/* A warning can be sent from here too when the proposed action is something else (e.g. a customs hold). */}
                     {notice.severity === "warning" && !noticeSent && action.kind !== "notify_customer" && (
-                      <ActionControl shipmentId={s.id} action={{ kind: "notify_customer", label: "Send notice", rationale: "" }} done={false} compact />
+                      <ActionControl
+                        shipmentId={s.id}
+                        action={{ kind: "notify_customer", label: "Send notice", rationale: "" }}
+                        done={false}
+                        compact
+                      />
                     )}
                   </div>
                 </div>
@@ -518,7 +553,10 @@ export async function CustomerShipmentDetail({ facts, received, done }: { facts:
 export function NoticeBanner({ notice, href }: { notice: { title: string; body: string; severity: "info" | "warning" }; href?: string }) {
   const body = (
     <div
-      className={cn("flex gap-3 rounded-xl border p-4", notice.severity === "warning" ? "border-amber-200 bg-amber-50" : "border-sky-200 bg-sky-50")}
+      className={cn(
+        "flex gap-3 rounded-xl border p-4",
+        notice.severity === "warning" ? "border-amber-200 bg-amber-50" : "border-sky-200 bg-sky-50",
+      )}
       data-testid="customer-notice"
     >
       {notice.severity === "warning" ? (

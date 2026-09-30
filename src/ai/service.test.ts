@@ -59,7 +59,9 @@ describe("customerNotice", () => {
       title: "Your shipment will arrive 2 days later than planned",
     });
     // The cause comes from the operator's data (vessel behind plan), never from an invented reason.
-    expect(notice("shp-1002")?.body).toMatch(/^The vessel is running 4 days behind schedule at the Port of Veracruz\. New estimated delivery: /);
+    expect(notice("shp-1002")?.body).toMatch(
+      /^The vessel is running 4 days behind schedule at the Port of Veracruz\. New estimated delivery: /,
+    );
   });
 
   it("does not claim actions nobody has taken", () => {
@@ -111,7 +113,10 @@ describe("suggestMapping", () => {
 describe("after ops uploads the missing invoice", () => {
   it("moves on to the next blocker instead of asking again", () => {
     const s = withUploadedDocuments(getShipment("shp-1001")!);
-    expect(suggestNextAction(s, assessRisk(s))).toMatchObject({ kind: "contact_operator", label: "Ask Transvolta Road Freight why customs is holding it" });
+    expect(suggestNextAction(s, assessRisk(s))).toMatchObject({
+      kind: "contact_operator",
+      label: "Ask Transvolta Road Freight why customs is holding it",
+    });
   });
 });
 

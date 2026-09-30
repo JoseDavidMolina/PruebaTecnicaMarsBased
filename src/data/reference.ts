@@ -4,14 +4,34 @@ import type { Customer, Place, Site, User } from "@/domain/types";
 
 export const SITES: Site[] = [
   { id: "site-zgz", name: "Zaragoza Plant", kind: "factory", place: { name: "Zaragoza", country: "ES", lat: 41.6488, lng: -0.8891 } },
-  { id: "site-bcn", name: "Barcelona Distribution Center", kind: "warehouse", place: { name: "El Prat de Llobregat", country: "ES", lat: 41.3275, lng: 2.0952 } },
+  {
+    id: "site-bcn",
+    name: "Barcelona Distribution Center",
+    kind: "warehouse",
+    place: { name: "El Prat de Llobregat", country: "ES", lat: 41.3275, lng: 2.0952 },
+  },
   { id: "site-brno", name: "Brno Plant", kind: "factory", place: { name: "Brno", country: "CZ", lat: 49.1951, lng: 16.6068 } },
 ];
 
 export const CUSTOMERS: Customer[] = [
-  { id: "cust-oskendra-uk", name: "Oskendra UK Ltd", kind: "subsidiary", place: { name: "Birmingham", country: "GB", lat: 52.4862, lng: -1.8904 } },
-  { id: "cust-oskendra-mx", name: "Oskendra México", kind: "subsidiary", place: { name: "Puebla", country: "MX", lat: 19.0414, lng: -98.2063 } },
-  { id: "cust-solenne", name: "Solenne Équipements", kind: "customer", place: { name: "Villeurbanne", country: "FR", lat: 45.7719, lng: 4.8902 } },
+  {
+    id: "cust-oskendra-uk",
+    name: "Oskendra UK Ltd",
+    kind: "subsidiary",
+    place: { name: "Birmingham", country: "GB", lat: 52.4862, lng: -1.8904 },
+  },
+  {
+    id: "cust-oskendra-mx",
+    name: "Oskendra México",
+    kind: "subsidiary",
+    place: { name: "Puebla", country: "MX", lat: 19.0414, lng: -98.2063 },
+  },
+  {
+    id: "cust-solenne",
+    name: "Solenne Équipements",
+    kind: "customer",
+    place: { name: "Villeurbanne", country: "FR", lat: 45.7719, lng: 4.8902 },
+  },
   { id: "cust-kaltberg", name: "Kaltberg Bau GmbH", kind: "customer", place: { name: "Munich", country: "DE", lat: 48.1351, lng: 11.582 } },
   { id: "cust-ribeira", name: "Ribeira Maquinaria", kind: "customer", place: { name: "Porto", country: "PT", lat: 41.1579, lng: -8.6291 } },
   { id: "cust-meseta", name: "Meseta Suministros", kind: "customer", place: { name: "Madrid", country: "ES", lat: 40.4168, lng: -3.7038 } },

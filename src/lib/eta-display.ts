@@ -14,7 +14,9 @@ export function etaText(eta: EtaPrediction, delivered: boolean, now: Date = DEMO
   // A time of day is only as precise as the estimate: shown for a high-confidence estimate that is late by hours
   // (the day alone can match the promised day), otherwise the day and its range.
   const precise = eta.confidence === "high" && isLate(eta) && eta.delayHours < 24;
-  const main = precise ? `${dayLabel(eta.expected, now)}, ${formatTime(eta.expected)} ${zoneName(eta.expected)}` : dayLabel(eta.expected, now);
+  const main = precise
+    ? `${dayLabel(eta.expected, now)}, ${formatTime(eta.expected)} ${zoneName(eta.expected)}`
+    : dayLabel(eta.expected, now);
   return { main, sub: range.includes("–") ? `Range ${range}` : undefined };
 }
 

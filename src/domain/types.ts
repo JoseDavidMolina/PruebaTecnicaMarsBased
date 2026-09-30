@@ -29,8 +29,7 @@ export type Operator = {
 };
 
 export type User =
-  | { id: string; name: string; role: "ops"; siteIds: string[] }
-  | { id: string; name: string; role: "customer"; customerId: string };
+  { id: string; name: string; role: "ops"; siteIds: string[] } | { id: string; name: string; role: "customer"; customerId: string };
 
 export const NORMALIZED_STATUSES = [
   "booked",
@@ -78,13 +77,7 @@ export type Milestone = {
   reliability: Reliability;
 };
 
-export type DocumentKind =
-  | "commercial_invoice"
-  | "packing_list"
-  | "cmr"
-  | "bill_of_lading"
-  | "customs_declaration"
-  | "proof_of_delivery";
+export type DocumentKind = "commercial_invoice" | "packing_list" | "cmr" | "bill_of_lading" | "customs_declaration" | "proof_of_delivery";
 
 export const DOCUMENT_LABELS: Record<DocumentKind, string> = {
   commercial_invoice: "Commercial invoice",

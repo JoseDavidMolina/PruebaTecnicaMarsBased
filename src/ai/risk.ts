@@ -6,7 +6,15 @@ import { isLate, predictEta } from "./eta";
 import type { EtaPrediction, RiskAssessment, RiskFlag } from "./types";
 
 // NOTE(simplification): hand-tuned weights standing in for a model trained on past incidents; keep them here so they are easy to tune.
-const WEIGHTS = { customs_hold: 45, exception: 40, stale: 35, port_delay: 30, missing_document: 15, unrecognised_update: 15, low_confidence: 10 };
+const WEIGHTS = {
+  customs_hold: 45,
+  exception: 40,
+  stale: 35,
+  port_delay: 30,
+  missing_document: 15,
+  unrecognised_update: 15,
+  low_confidence: 10,
+};
 
 /** Hours the sea leg is behind its plan, by the carrier's own ETA or by the clock. */
 export function portDelayHours(s: TrackedShipment, now: Date = DEMO_NOW): number {
@@ -38,7 +46,9 @@ export function assessRisk(s: TrackedShipment, now: Date = DEMO_NOW, eta: EtaPre
   }
   if (isStale(s, now)) {
     flags.push("stale");
-    reasons.push(`No operator update for ${formatDuration(hoursSinceUpdate(s, now) ?? 0)} (expected at least every ${STALE_AFTER_HOURS[leg.mode]}h by ${leg.mode}).`);
+    reasons.push(
+      `No operator update for ${formatDuration(hoursSinceUpdate(s, now) ?? 0)} (expected at least every ${STALE_AFTER_HOURS[leg.mode]}h by ${leg.mode}).`,
+    );
     score += WEIGHTS.stale;
   }
   const portDelay = portDelayHours(s, now);
@@ -56,7 +66,9 @@ export function assessRisk(s: TrackedShipment, now: Date = DEMO_NOW, eta: EtaPre
   const last = lastMilestone(s);
   if (last?.status === "unknown") {
     flags.push("unrecognised_update");
-    reasons.push(`${OPERATORS[last.operatorId].name} sent an update we don't recognise ("${last.rawStatus}"); the status shown is from the previous one.`);
+    reasons.push(
+      `${OPERATORS[last.operatorId].name} sent an update we don't recognise ("${last.rawStatus}"); the status shown is from the previous one.`,
+    );
     score += WEIGHTS.unrecognised_update;
   }
   if (isLate(eta)) {

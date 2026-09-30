@@ -9,8 +9,7 @@ const HOUR = 3_600_000;
 export const hoursBetween = (from: string | Date, to: string | Date = DEMO_NOW): number =>
   (new Date(to).getTime() - new Date(from).getTime()) / HOUR;
 
-export const addHours = (date: string | Date, hours: number): string =>
-  new Date(new Date(date).getTime() + hours * HOUR).toISOString();
+export const addHours = (date: string | Date, hours: number): string => new Date(new Date(date).getTime() + hours * HOUR).toISOString();
 
 export const formatDate = (iso: string): string =>
   new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: DISPLAY_TZ }).format(new Date(iso));
@@ -56,7 +55,13 @@ export type WallClock = { y: number; m: number; d: number; hh: number; mm: numbe
 /** The wall-clock reading of an instant in an IANA time zone. */
 export function zonedParts(date: string | Date, timeZone: string): WallClock {
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric",
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
   }).formatToParts(new Date(date));
   const get = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((p) => p.type === type)!.value);
   return { y: get("year"), m: get("month"), d: get("day"), hh: get("hour"), mm: get("minute") };

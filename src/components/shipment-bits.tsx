@@ -18,7 +18,17 @@ const TONES: Record<Tone, string> = {
   violet: "bg-violet-50 text-violet-800 ring-violet-600/20",
 };
 
-export function Pill({ tone = "neutral", className, children, title }: { tone?: Tone; className?: string; children: React.ReactNode; title?: string }) {
+export function Pill({
+  tone = "neutral",
+  className,
+  children,
+  title,
+}: {
+  tone?: Tone;
+  className?: string;
+  children: React.ReactNode;
+  title?: string;
+}) {
   return (
     <span
       title={title}
@@ -62,7 +72,11 @@ export function ReliabilityBadge({ reliability }: { reliability: Reliability }) 
       <CircleCheck /> Confirmed
     </Pill>
   ) : (
-    <Pill tone="neutral" className="border border-dashed border-slate-400 bg-transparent ring-0" title="Estimated by us, not reported by the operator">
+    <Pill
+      tone="neutral"
+      className="border border-dashed border-slate-400 bg-transparent ring-0"
+      title="Estimated by us, not reported by the operator"
+    >
       <CircleDashed /> Estimated
     </Pill>
   );
@@ -155,7 +169,17 @@ const ACTION_BUTTON: Record<NextAction["kind"], { cta: string; pending: string; 
 };
 
 /** One click to carry out the proposed action, or proof that it was done. Demo: nothing leaves the app. */
-export function ActionControl({ shipmentId, action, done, compact = false }: { shipmentId: string; action: NextAction; done: boolean; compact?: boolean }) {
+export function ActionControl({
+  shipmentId,
+  action,
+  done,
+  compact = false,
+}: {
+  shipmentId: string;
+  action: NextAction;
+  done: boolean;
+  compact?: boolean;
+}) {
   if (action.kind === "none") return null;
   const b = ACTION_BUTTON[action.kind];
   if (done) {

@@ -80,7 +80,9 @@ test("an operator message already received never changes: uploading only affects
 
 test("the briefing and its KPIs describe what the filters show", async ({ page }) => {
   await page.goto("/?site=site-brno");
-  await expect(page.getByTestId("daily-summary")).toHaveText("Today: 1 at risk (1 with no recent update), 0 out for delivery, 0 delivered.");
+  await expect(page.getByTestId("daily-summary")).toHaveText(
+    "Today: 1 at risk (1 with no recent update), 0 out for delivery, 0 delivered.",
+  );
   await expect(page.getByText("· Brno Plant only")).toBeVisible();
   // The KPI keeps the filter, so its drill-down shows the same count.
   await page.getByRole("link", { name: "1 No recent update" }).click();
@@ -120,7 +122,9 @@ test("customer: own perimeter, proactive notices and the reported delivery route
   await expect(page.getByText("Confirmed").first()).toBeVisible();
   await expect(page.locator(".leaflet-container")).toBeVisible();
   await expect(page.getByRole("link", { name: "Open Packing list (demo)" })).toHaveAttribute("href", "/demo-document.pdf");
-  await expect(page.getByTestId("map-source")).toHaveText("Reported by Tarnwick Parcel at 7 Oct, 08:50 CEST. Shown only while out for delivery.");
+  await expect(page.getByTestId("map-source")).toHaveText(
+    "Reported by Tarnwick Parcel at 7 Oct, 08:50 CEST. Shown only while out for delivery.",
+  );
 
   // Another customer's shipment does not exist for Claire.
   const response = await page.goto("/shipments/shp-1001");

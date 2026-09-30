@@ -122,6 +122,15 @@ describe("matchQuery", () => {
   });
 
   it("uses every word of 'trucks from Zaragoza'", () => {
-    expect(search("trucks from Zaragoza")).toEqual(["shp-1001", "shp-1002", "shp-1005", "shp-1007", "shp-1011", "shp-1013", "shp-1016", "shp-1019"]);
+    expect(search("trucks from Zaragoza")).toEqual([
+      "shp-1001",
+      "shp-1002",
+      "shp-1005",
+      "shp-1007",
+      "shp-1011",
+      "shp-1013",
+      "shp-1016",
+      "shp-1019",
+    ]);
   });
 });

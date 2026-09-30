@@ -110,6 +110,8 @@ const POD = { proof_of_delivery: "available" } as const;
 
 // --- The portfolio ------------------------------------------------------------
 
+// Authored as a compact table, one shipment spec per block, so a scenario reads at a glance; Prettier would double its length.
+// prettier-ignore
 export const RAW_SHIPMENTS: Shipment[] = [
   // HERO 1: international, held at customs in Dover, commercial invoice missing.
   build({

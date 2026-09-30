@@ -27,16 +27,24 @@ export function predictEta(s: TrackedShipment, now: Date = DEMO_NOW): EtaPredict
   if (status === "delivered") {
     const at = s.milestones.findLast((m) => m.status === "delivered")!.at;
     return {
-      expected: at, earliest: at, latest: at,
-      reliability: "confirmed", confidence: "high", delayHours: delayHours(at),
+      expected: at,
+      earliest: at,
+      latest: at,
+      reliability: "confirmed",
+      confidence: "high",
+      delayHours: delayHours(at),
       explanation: `Delivered on ${formatDate(at)}, confirmed by ${operator}.`,
     };
   }
   if (status === "out_for_delivery" && reported && leg.seq === s.legs.length) {
     const expected = addHours(reported.earliest, hoursBetween(reported.earliest, reported.latest) / 2);
     return {
-      expected, earliest: reported.earliest, latest: reported.latest,
-      reliability: "confirmed", confidence: "high", delayHours: delayHours(expected),
+      expected,
+      earliest: reported.earliest,
+      latest: reported.latest,
+      reliability: "confirmed",
+      confidence: "high",
+      delayHours: delayHours(expected),
       explanation: `${operator} confirmed a delivery window of ${formatTime(reported.earliest)}–${formatTime(reported.latest)} ${zoneName(reported.latest)}.`,
     };
   }

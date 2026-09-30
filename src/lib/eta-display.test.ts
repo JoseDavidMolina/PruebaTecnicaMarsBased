@@ -26,7 +26,12 @@ describe("etaText", () => {
   });
 
   it("drops the range when it fits in one day, and names other days by date", () => {
-    const tomorrow = { ...onTime, expected: "2026-10-08T10:00:00.000Z", earliest: "2026-10-08T08:00:00.000Z", latest: "2026-10-08T14:00:00.000Z" };
+    const tomorrow = {
+      ...onTime,
+      expected: "2026-10-08T10:00:00.000Z",
+      earliest: "2026-10-08T08:00:00.000Z",
+      latest: "2026-10-08T14:00:00.000Z",
+    };
     expect(etaText(tomorrow, false)).toEqual({ main: "8 Oct", sub: undefined });
   });
 

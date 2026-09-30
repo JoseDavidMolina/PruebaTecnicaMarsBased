@@ -6,7 +6,15 @@ import { NORMALIZED_STATUSES } from "@/domain/types";
 
 const isoDate = z.iso.datetime();
 
-export const RiskFlagSchema = z.enum(["customs_hold", "port_delay", "stale", "late", "exception", "missing_document", "unrecognised_update"]);
+export const RiskFlagSchema = z.enum([
+  "customs_hold",
+  "port_delay",
+  "stale",
+  "late",
+  "exception",
+  "missing_document",
+  "unrecognised_update",
+]);
 
 export const RiskAssessmentSchema = z.object({
   score: z.number().int().min(0).max(100),
