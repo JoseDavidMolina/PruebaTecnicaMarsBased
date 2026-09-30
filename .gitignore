@@ -52,3 +52,8 @@ next-env.d.ts
 
 # local review output
 /review/
+
+# agent skills installed locally (npx skills add)
+/.agents/
+/.claude/skills/
+/skills-lock.json
