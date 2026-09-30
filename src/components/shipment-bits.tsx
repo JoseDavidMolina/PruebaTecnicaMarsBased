@@ -195,7 +195,8 @@ export function JourneyLine({ shipment, stale, size = "compact" }: { shipment: T
           return (
             <div key={leg.id} className="flex min-w-0 flex-1 flex-col items-stretch gap-0.5">
               <Icon className={cn("mx-auto text-muted-foreground", size === "compact" ? "size-3" : "size-3.5")} />
-              <div className="flex items-center gap-0.5">
+              {/* Fixed at the marker's height, so the line sits at the same level whichever leg carries the marker. */}
+              <div className={cn("flex items-center gap-0.5", size === "compact" ? "h-2.5" : "h-3.5")}>
                 {i === 0 && <span className={cn("shrink-0 rounded-full bg-foreground", node)} />}
                 {here?.at === "start" && <JourneyMarker status={here.milestone.status} stale={stale} size={size} />}
                 <Stretch solid={progress === "done" || (here !== undefined && here.at !== "start")} />
