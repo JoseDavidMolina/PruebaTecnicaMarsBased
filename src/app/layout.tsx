@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Package, RotateCcw } from "lucide-react";
 import { DEMO_NOW, formatDateTime } from "@/lib/clock";
 import { USERS } from "@/data";
-import { AutoSubmitSelect, SubmitButton } from "@/components/client-controls";
+import { AutoSubmitSelect, LiveRefresh, SubmitButton } from "@/components/client-controls";
 import { resetDemo, switchUser } from "./actions";
 import { getDemo } from "./demo";
 import "./globals.css";
@@ -36,6 +36,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <span className="text-xs text-muted-foreground" title="Fixed clock so the demo is identical on every run">
               Demo clock · {formatDateTime(DEMO_NOW.toISOString())}
             </span>
+            {/* Off in e2e runs (playwright.config.ts) so a refresh never lands mid-assertion. */}
+            {user.role === "ops" && process.env.LIVE_REFRESH !== "off" && <LiveRefresh seconds={60} />}
             <div className="ml-auto flex items-center gap-2">
               {simulated.length + done.length > 0 && (
                 <form action={resetDemo}>

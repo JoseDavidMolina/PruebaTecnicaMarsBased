@@ -10,6 +10,7 @@ export default defineConfig({
   webServer: {
     command: `pnpm dev --port ${PORT}`,
     url: `http://localhost:${PORT}`,
+    env: { LIVE_REFRESH: "off" },
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },

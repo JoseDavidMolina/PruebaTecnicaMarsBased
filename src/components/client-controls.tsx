@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import { cn } from "@/lib/utils";
 
@@ -24,5 +26,22 @@ export function SubmitButton({ children, pendingText, className }: { children: R
     >
       {pending ? pendingText : children}
     </button>
+  );
+}
+
+/**
+ * Re-renders the server components on an interval, so ops sees new operator updates without reloading.
+ * Only re-fetches: the demo clock and the cookies it reads are unchanged, so the demo stays deterministic.
+ */
+export function LiveRefresh({ seconds }: { seconds: number }) {
+  const router = useRouter();
+  useEffect(() => {
+    const id = setInterval(() => router.refresh(), seconds * 1000);
+    return () => clearInterval(id);
+  }, [router, seconds]);
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" title="The view reloads the latest operator data on its own">
+      <span className="size-1.5 rounded-full bg-emerald-500" /> Live · refreshes every {seconds} s
+    </span>
   );
 }

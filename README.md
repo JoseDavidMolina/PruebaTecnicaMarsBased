@@ -45,3 +45,9 @@ The app runs on a fixed demo clock (**Wed 7 Oct 2026, 09:00 Madrid**), so every 
 - **`src/ai`: everything "AI"**, behind the `AiService` interface (risk, ETA, next action, daily summary, query parsing and answering, customer notice, suggested reading of unknown operator codes). The mock is pure functions, and every output is validated against Zod schemas, as a real model's output would be. `src/ai/index.ts` is the single swap point.
 - **`src/data`: synthetic data.** Four fictional operators with deliberately different formats (numeric codes, free text, port events with UN/LOCODEs, German short codes), three sites, seven customers and 20 shipments.
 - **Reliability rule.** Stored data is only what operators reported. Every ETA and milestone is labelled **Confirmed** (the operator said so) or **Estimated** (we computed it), and estimates always carry a confidence level.
+
+## Freshness in production
+
+In the prototype, updates arrive through "Simulate operator update", and the ops header shows **Live · refreshes every 60 s**: the view re-fetches its server data on an interval (`router.refresh()`), without touching the demo clock. Stale data is flagged per mode ("No update for 4 days"), never shown as on time.
+
+In production, each operator feed arrives by webhook where the operator offers one, or by polling otherwise, into a queue. A worker validates each message with the same per-operator Zod schema, normalizes it, stores the raw event, and revalidates only the views of the affected shipment. When the recomputed risk crosses a threshold, it enters the ops exception queue (notified in-app, or by email or chat for high risk), and customer notices are drafted for ops to send, as in the demo.
