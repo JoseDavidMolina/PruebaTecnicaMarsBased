@@ -58,7 +58,8 @@ src/data/               synthetic data
 src/ai/index.ts         `ai`: the single AiService instance the UI uses (swap point)
 src/app/
   demo.ts               getDemo(): user, simulated ids and completed actions from cookies → perimeter-filtered shipments; loadFacts() via `ai`
-  actions.ts            Server Actions: switchUser, simulateUpdate, completeAction, resetDemo (inputs checked against known ids and perimeter)
+  actions.ts            Server Actions: switchUser (known user ids), simulateUpdate (any role, a demo control; only shipments in the user's perimeter),
+                        completeAction (ops only, perimeter), resetDemo
   page.tsx              "/" → OpsDashboard or CustomerHome by role; search/filters are URL params (q, site, op, view)
   shipments/[id]        detail by role; outside the perimeter → notFound()
 src/components/

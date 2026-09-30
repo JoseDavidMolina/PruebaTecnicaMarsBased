@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { SIMULATED_UPDATES, USERS } from "@/data";
 import { ACTION_KINDS, type ActionKind, doneKey, DONE_COOKIE, getDemo, SIM_COOKIE, USER_COOKIE } from "./demo";
 
-// Inputs are checked against the known ids: Server Actions are reachable by direct POST.
+// Inputs are checked against the known ids and the current user's perimeter: Server Actions are reachable by direct POST.
 
 const list = (value: string | undefined) => (value ?? "").split(",").filter(Boolean);
 
@@ -15,9 +15,14 @@ export async function switchUser(formData: FormData) {
   redirect("/");
 }
 
+/**
+ * Injects the next operator message. Any role may press it, customers included: it is a demo control that
+ * stands in for the operator's feed. It still only reaches shipments inside the current user's perimeter.
+ */
 export async function simulateUpdate(formData: FormData) {
   const id = String(formData.get("shipmentId"));
-  if (!(id in SIMULATED_UPDATES)) return;
+  const { shipments } = await getDemo();
+  if (!(id in SIMULATED_UPDATES) || !shipments.some((s) => s.id === id)) return;
   const jar = await cookies();
   const current = list(jar.get(SIM_COOKIE)?.value);
   if (!current.includes(id)) jar.set(SIM_COOKIE, [...current, id].join(","));
