@@ -49,3 +49,6 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# local review output
+/review/
