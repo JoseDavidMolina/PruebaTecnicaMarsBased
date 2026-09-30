@@ -379,7 +379,9 @@ function Header({ facts, variant }: { facts: ShipmentFacts; variant: Variant }) 
       <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
         {variant === "ops" ? `${s.orderRef} · ${customerOf(s).name}` : `Shipment ${s.reference}`}
         <span className="max-sm:hidden">·</span>
-        {siteOf(s).name} → {customerOf(s).place.name} ({customerOf(s).place.country})
+        <span>
+          {siteOf(s).name} → {customerOf(s).place.name} ({customerOf(s).place.country})
+        </span>
       </p>
       <div className="max-w-3xl pt-1">
         <JourneyLine shipment={s} stale={facts.stale} size="full" />
