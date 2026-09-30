@@ -52,7 +52,7 @@ export const ShipmentQuerySchema = z.object({
   statuses: z.array(z.enum(NORMALIZED_STATUSES)),
   flags: z.array(z.enum(["late", "at_risk", "stale", "on_time"])),
   mode: z.enum(["road", "sea"]).optional(),
-  operatorIds: z.array(z.enum(["transvolta", "kestrel", "bluemeridian", "alpenweg"])),
+  operatorIds: z.array(z.enum(["transvolta", "tarnwick", "bluemeridian", "alpenweg"])),
   siteIds: z.array(z.string()),
   customerIds: z.array(z.string()),
   eta: z.object({ from: isoDate, to: isoDate }).optional(),

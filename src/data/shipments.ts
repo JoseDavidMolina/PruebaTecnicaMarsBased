@@ -17,8 +17,8 @@ const local = (h: number, op: OperatorId) => {
 
 const tv = (code: number, h: number, depot: string) => ({ code, ts: Math.round(new Date(at(h)).getTime() / 1000), depot });
 
-const ke = (status: string, h: number, city: string, window?: string) => {
-  const t = local(h, "kestrel");
+const tn = (status: string, h: number, city: string, window?: string) => {
+  const t = local(h, "tarnwick");
   return { status, time: `${t.d}/${t.m}/${t.y} ${t.hh}:${t.mm}`, city, ...(window && { window }) };
 };
 
@@ -53,7 +53,7 @@ const NON_EU = ["GB", "MX"];
 const site = (id: string) => SITES.find((s) => s.id === id)!;
 const customer = (id: string) => CUSTOMERS.find((c) => c.id === id)!;
 const operatorRef = (op: OperatorId, n: number, i: number) =>
-  ({ transvolta: `7${n}${i}0042`, kestrel: `KX${n}${i}EU`, bluemeridian: `BMLU${n}${i}731`, alpenweg: `AW-${n}-${i}` })[op];
+  ({ transvolta: `7${n}${i}0042`, tarnwick: `TW${n}${i}EU`, bluemeridian: `BMLU${n}${i}731`, alpenweg: `AW-${n}-${i}` })[op];
 
 function build(spec: Spec): Shipment {
   const id = `shp-${spec.n}`;
@@ -113,17 +113,17 @@ const POD = { proof_of_delivery: "available" } as const;
 export const RAW_SHIPMENTS: Shipment[] = [
   // HERO 1: international, held at customs in Dover, commercial invoice missing.
   build({
-    n: 1001, order: "PO-12345", site: "site-zgz", customer: "cust-arvenza-uk", promised: 12,
+    n: 1001, order: "PO-12345", site: "site-zgz", customer: "cust-oskendra-uk", promised: 12,
     docs: { commercial_invoice: "missing" },
     legs: [{
-      op: "transvolta", from: sitePlace("site-zgz"), to: customerPlace("cust-arvenza-uk"), dep: -96, arr: -12,
+      op: "transvolta", from: sitePlace("site-zgz"), to: customerPlace("cust-oskendra-uk"), dep: -96, arr: -12,
       events: [tv(10, -120, "Zaragoza"), tv(20, -96, "Zaragoza"), tv(30, -70, "Bordeaux"), tv(30, -44, "Calais"), tv(40, -30, "Dover"), tv(40, -6, "Dover")],
     }],
   }),
 
   // HERO 2: multimodal road → port → vessel → port → last mile, vessel waiting for a berth in Veracruz.
   build({
-    n: 1002, order: "PO-12402", site: "site-zgz", customer: "cust-arvenza-mx", promised: 48,
+    n: 1002, order: "PO-12402", site: "site-zgz", customer: "cust-oskendra-mx", promised: 48,
     legs: [
       {
         op: "transvolta", from: sitePlace("site-zgz"), to: PORTS.valencia, dep: -480, arr: -470,
@@ -140,7 +140,7 @@ export const RAW_SHIPMENTS: Shipment[] = [
           bm("ANC", -10, "MXVER", "MV Aurora Tide", 54),
         ],
       },
-      { op: "kestrel", from: PORTS.veracruz, to: customerPlace("cust-arvenza-mx"), dep: -24, arr: 24, events: [] },
+      { op: "tarnwick", from: PORTS.veracruz, to: customerPlace("cust-oskendra-mx"), dep: -24, arr: 24, events: [] },
     ],
   }),
 
@@ -162,11 +162,11 @@ export const RAW_SHIPMENTS: Shipment[] = [
         events: [tv(10, -60, "El Prat"), tv(20, -40, "El Prat"), tv(30, -28, "Perpignan"), tv(60, -16, "Lyon")],
       },
       {
-        op: "kestrel", from: HUBS.lyon, to: customerPlace("cust-solenne"), dep: -3, arr: 10,
+        op: "tarnwick", from: HUBS.lyon, to: customerPlace("cust-solenne"), dep: -3, arr: 10,
         events: [
-          ke("Parcel received at Lyon depot", -14, "Corbas"),
-          ke("Sorting completed", -5, "Corbas"),
-          ke("Out for delivery - driver assigned", -2, "Lyon", "09:00-11:00"),
+          tn("Parcel received at Lyon depot", -14, "Corbas"),
+          tn("Sorting completed", -5, "Corbas"),
+          tn("Out for delivery - driver assigned", -2, "Lyon", "09:00-11:00"),
         ],
       },
     ],
@@ -208,13 +208,13 @@ export const RAW_SHIPMENTS: Shipment[] = [
   }),
   build({
     n: 1010, order: "PO-12388", site: "site-bcn", customer: "cust-solenne", promised: 4,
-    legs: [{ op: "kestrel", from: sitePlace("site-bcn"), to: customerPlace("cust-solenne"), dep: -30, arr: 4,
+    legs: [{ op: "tarnwick", from: sitePlace("site-bcn"), to: customerPlace("cust-solenne"), dep: -30, arr: 4,
       events: [
-        ke("Collected from shipper", -30, "El Prat"),
-        ke("In transit - departed Barcelona hub", -26, "Barcelona"),
-        ke("Arrived at Lyon depot", -12, "Corbas"),
-        ke("Out for delivery", -6, "Lyon"),
-        ke("Delivery attempt failed - recipient absent, next attempt next business day", -3, "Villeurbanne"),
+        tn("Collected from shipper", -30, "El Prat"),
+        tn("In transit - departed Barcelona hub", -26, "Barcelona"),
+        tn("Arrived at Lyon depot", -12, "Corbas"),
+        tn("Out for delivery", -6, "Lyon"),
+        tn("Delivery attempt failed - recipient absent, next attempt next business day", -3, "Villeurbanne"),
       ] }],
   }),
   build({
@@ -223,18 +223,18 @@ export const RAW_SHIPMENTS: Shipment[] = [
       events: [tv(10, -40, "Zaragoza"), tv(20, -20, "Zaragoza"), tv(30, -8, "Salamanca")] }],
   }),
   build({
-    n: 1012, order: "PO-12356", site: "site-bcn", customer: "cust-arvenza-mx", promised: 216,
+    n: 1012, order: "PO-12356", site: "site-bcn", customer: "cust-oskendra-mx", promised: 216,
     legs: [
       { op: "transvolta", from: sitePlace("site-bcn"), to: PORTS.barcelona, dep: -150, arr: -146,
         events: [tv(10, -170, "El Prat"), tv(20, -150, "El Prat"), tv(60, -146, "Barcelona port")] },
       { op: "bluemeridian", from: PORTS.barcelona, to: PORTS.veracruz, dep: -120, arr: 150,
         events: [bm("GIN", -144, "ESBCN"), bm("LOD", -124, "ESBCN", "MV Selene Crest"), bm("VDP", -120, "ESBCN", "MV Selene Crest", 150), bm("POS", -20, "MXVER", "MV Selene Crest", 146)] },
-      { op: "kestrel", from: PORTS.veracruz, to: customerPlace("cust-arvenza-mx"), dep: 160, arr: 200, events: [] },
+      { op: "tarnwick", from: PORTS.veracruz, to: customerPlace("cust-oskendra-mx"), dep: 160, arr: 200, events: [] },
     ],
   }),
   build({
-    n: 1013, order: "PO-12201", site: "site-zgz", customer: "cust-arvenza-uk", promised: -140, docs: POD,
-    legs: [{ op: "transvolta", from: sitePlace("site-zgz"), to: customerPlace("cust-arvenza-uk"), dep: -220, arr: -150,
+    n: 1013, order: "PO-12201", site: "site-zgz", customer: "cust-oskendra-uk", promised: -140, docs: POD,
+    legs: [{ op: "transvolta", from: sitePlace("site-zgz"), to: customerPlace("cust-oskendra-uk"), dep: -220, arr: -150,
       events: [tv(10, -240, "Zaragoza"), tv(20, -220, "Zaragoza"), tv(30, -190, "Calais"), tv(40, -175, "Dover"), tv(45, -165, "Dover"), tv(50, -152, "Birmingham"), tv(60, -150, "Birmingham")] }],
   }),
   build({
@@ -245,13 +245,13 @@ export const RAW_SHIPMENTS: Shipment[] = [
   }),
   build({
     n: 1015, order: "PO-12399", site: "site-bcn", customer: "cust-ostara", promised: 6, docs: POD,
-    legs: [{ op: "kestrel", from: sitePlace("site-bcn"), to: customerPlace("cust-ostara"), dep: -40, arr: -1,
+    legs: [{ op: "tarnwick", from: sitePlace("site-bcn"), to: customerPlace("cust-ostara"), dep: -40, arr: -1,
       events: [
-        ke("Collected from shipper", -40, "El Prat"),
-        ke("In transit - departed Barcelona hub", -36, "Barcelona"),
-        ke("Arrived at Milan depot", -12, "Milano"),
-        ke("Out for delivery", -5, "Milano"),
-        ke("Delivered - signed by M. Rossi", -2, "Milano"),
+        tn("Collected from shipper", -40, "El Prat"),
+        tn("In transit - departed Barcelona hub", -36, "Barcelona"),
+        tn("Arrived at Milan depot", -12, "Milano"),
+        tn("Out for delivery", -5, "Milano"),
+        tn("Delivered - signed by M. Rossi", -2, "Milano"),
       ] }],
   }),
   build({
@@ -293,5 +293,5 @@ export const SIMULATED_UPDATES: Record<string, RawEvent> = {
   "shp-1001": { legId: "shp-1001-L1", operatorId: "transvolta", payload: tv(45, 0, "Dover") },
   "shp-1002": { legId: "shp-1002-L2", operatorId: "bluemeridian", payload: bm("VAR", 0, "MXVER", "MV Aurora Tide", 12) },
   "shp-1003": { legId: "shp-1003-L1", operatorId: "alpenweg", payload: aw("UNT", 0, "Passau", "Unterwegs") },
-  "shp-1004": { legId: "shp-1004-L2", operatorId: "kestrel", payload: ke("Delivered - signed by C. Dubois", 0, "Villeurbanne") },
+  "shp-1004": { legId: "shp-1004-L2", operatorId: "tarnwick", payload: tn("Delivered - signed by C. Dubois", 0, "Villeurbanne") },
 };

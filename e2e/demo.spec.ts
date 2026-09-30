@@ -16,7 +16,7 @@ test("operations: briefing, search, and an operator update that recalculates the
   await page.getByRole("button", { name: "Search" }).click();
   await expect(page.getByTestId("query-interpretation")).toContainText("Reference 12345");
   await expect(page.locator("tbody tr")).toHaveCount(1);
-  await expect(page.getByTestId("query-answer")).toContainText("SHP-1001 (order PO-12345, Arvenza UK Ltd) is held at customs");
+  await expect(page.getByTestId("query-answer")).toContainText("SHP-1001 (order PO-12345, Oskendra UK Ltd) is held at customs");
 
   // Acting on the proposal: uploading the invoice moves the case on to its next blocker.
   await page.goto("/shipments/shp-1001");
@@ -25,7 +25,7 @@ test("operations: briefing, search, and an operator update that recalculates the
 
   // Multimodal shipment delayed at port.
   await page.goto("/shipments/shp-1002");
-  await expect(page.getByTestId("next-action")).toContainText("Notify Arvenza México of the new ETA");
+  await expect(page.getByTestId("next-action")).toContainText("Notify Oskendra México of the new ETA");
   await expect(page.getByText("Your shipment will arrive 2 days later than planned")).toBeVisible();
 
   await page.getByRole("button", { name: "Simulate operator update" }).click();
@@ -49,7 +49,7 @@ test("a drafted warning reaches the customer only once ops sends it", async ({ p
     await expect(page.getByRole("heading", { name: greeting })).toBeVisible();
   };
 
-  await viewAs("u-cust-arvenza-mx", "Hello, Diego");
+  await viewAs("u-cust-oskendra-mx", "Hello, Diego");
   await expect(page.getByText("later than planned")).toHaveCount(0);
 
   await viewAs("u-ops-all", "Good morning, Marta");
@@ -58,7 +58,7 @@ test("a drafted warning reaches the customer only once ops sends it", async ({ p
   await page.getByTestId("next-action").getByRole("button", { name: "Send notice" }).click();
   await expect(page.getByTestId("customer-view")).toContainText("Sent · visible to the customer");
 
-  await viewAs("u-cust-arvenza-mx", "Hello, Diego");
+  await viewAs("u-cust-oskendra-mx", "Hello, Diego");
   await expect(page.getByTestId("customer-notice")).toContainText("PO-12402: Your shipment will arrive 2 days later than planned");
 });
 

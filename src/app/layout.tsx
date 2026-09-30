@@ -13,7 +13,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Arvenza Shipment Tracker",
+  title: "Oskendra Shipment Tracker",
   description: "Consolidated, reliable shipment tracking across sites, operators and modes (prototype)",
 };
 
@@ -31,7 +31,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <span className="grid size-7 place-items-center rounded-md bg-slate-900 text-white">
                 <Package className="size-4" />
               </span>
-              Arvenza <span className="font-normal text-muted-foreground">Shipment Tracker</span>
+              Oskendra <span className="font-normal text-muted-foreground">Shipment Tracker</span>
             </Link>
             <span className="text-xs text-muted-foreground" title="Fixed clock so the demo is identical on every run">
               Demo clock · {formatDateTime(DEMO_NOW.toISOString())}

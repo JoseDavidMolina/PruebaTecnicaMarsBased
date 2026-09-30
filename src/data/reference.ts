@@ -9,8 +9,8 @@ export const SITES: Site[] = [
 ];
 
 export const CUSTOMERS: Customer[] = [
-  { id: "cust-arvenza-uk", name: "Arvenza UK Ltd", kind: "subsidiary", place: { name: "Birmingham", country: "GB", lat: 52.4862, lng: -1.8904 } },
-  { id: "cust-arvenza-mx", name: "Arvenza México", kind: "subsidiary", place: { name: "Puebla", country: "MX", lat: 19.0414, lng: -98.2063 } },
+  { id: "cust-oskendra-uk", name: "Oskendra UK Ltd", kind: "subsidiary", place: { name: "Birmingham", country: "GB", lat: 52.4862, lng: -1.8904 } },
+  { id: "cust-oskendra-mx", name: "Oskendra México", kind: "subsidiary", place: { name: "Puebla", country: "MX", lat: 19.0414, lng: -98.2063 } },
   { id: "cust-solenne", name: "Solenne Équipements", kind: "customer", place: { name: "Villeurbanne", country: "FR", lat: 45.7719, lng: 4.8902 } },
   { id: "cust-kaltberg", name: "Kaltberg Bau GmbH", kind: "customer", place: { name: "Munich", country: "DE", lat: 48.1351, lng: 11.582 } },
   { id: "cust-ribeira", name: "Ribeira Maquinaria", kind: "customer", place: { name: "Porto", country: "PT", lat: 41.1579, lng: -8.6291 } },
@@ -25,13 +25,13 @@ export const PORTS = {
 } satisfies Record<string, Place>;
 
 export const HUBS = {
-  lyon: { name: "Kestrel Lyon depot (Corbas)", country: "FR", lat: 45.6689, lng: 4.8975 },
+  lyon: { name: "Tarnwick Lyon depot (Corbas)", country: "FR", lat: 45.6689, lng: 4.8975 },
 } satisfies Record<string, Place>;
 
 export const USERS: User[] = [
   { id: "u-ops-all", name: "Marta Ruiz · Logistics control tower", role: "ops", siteIds: ["site-zgz", "site-bcn", "site-brno"] },
   { id: "u-ops-cz", name: "Tomáš Novák · Operations, Brno", role: "ops", siteIds: ["site-brno"] },
   { id: "u-cust-solenne", name: "Claire Dubois · Solenne Équipements", role: "customer", customerId: "cust-solenne" },
-  { id: "u-cust-arvenza-mx", name: "Diego Herrera · Arvenza México", role: "customer", customerId: "cust-arvenza-mx" },
-  { id: "u-cust-arvenza-uk", name: "Oliver Grant · Arvenza UK", role: "customer", customerId: "cust-arvenza-uk" },
+  { id: "u-cust-oskendra-mx", name: "Diego Herrera · Oskendra México", role: "customer", customerId: "cust-oskendra-mx" },
+  { id: "u-cust-oskendra-uk", name: "Oliver Grant · Oskendra UK", role: "customer", customerId: "cust-oskendra-uk" },
 ];

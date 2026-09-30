@@ -18,7 +18,7 @@ describe("predictEta", () => {
   it("uses the courier's delivery window as a confirmed ETA", () => {
     expect(eta("shp-1004")).toMatchObject({
       reliability: "confirmed",
-      earliest: "2026-10-07T07:00:00.000Z", // 09:00-11:00 Paris time, as Kestrel sent it
+      earliest: "2026-10-07T07:00:00.000Z", // 09:00-11:00 Paris time, as Tarnwick sent it
       latest: "2026-10-07T09:00:00.000Z",
       expected: "2026-10-07T08:00:00.000Z",
     });

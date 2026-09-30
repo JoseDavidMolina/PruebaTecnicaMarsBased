@@ -6,7 +6,7 @@ export type Reliability = "confirmed" | "estimated";
 /** How sure an estimate is. Independent from Reliability. */
 export type Confidence = "high" | "medium" | "low";
 
-export type OperatorId = "transvolta" | "kestrel" | "bluemeridian" | "alpenweg";
+export type OperatorId = "transvolta" | "tarnwick" | "bluemeridian" | "alpenweg";
 
 export type Place = {
   name: string;

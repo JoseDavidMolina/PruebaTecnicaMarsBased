@@ -32,7 +32,7 @@ describe("summarizeDay", () => {
 describe("suggestNextAction", () => {
   it("proposes the action that unblocks each case", () => {
     expect(action("shp-1001")).toMatchObject({ kind: "upload_document", label: "Upload commercial invoice" });
-    expect(action("shp-1002")).toMatchObject({ kind: "notify_customer", label: "Notify Arvenza México of the new ETA" });
+    expect(action("shp-1002")).toMatchObject({ kind: "notify_customer", label: "Notify Oskendra México of the new ETA" });
     expect(action("shp-1003").kind).toBe("contact_operator");
     expect(action("shp-1010").kind).toBe("contact_operator");
     expect(action("shp-1006").kind).toBe("none");
@@ -60,7 +60,7 @@ describe("customerNotice", () => {
   });
 
   it("confirms the delivery window, and stays quiet when there is nothing to say", () => {
-    expect(notice("shp-1004")?.title).toBe("Arriving today, 09:00–11:00"); // exactly the window Kestrel sent
+    expect(notice("shp-1004")?.title).toBe("Arriving today, 09:00–11:00"); // exactly the window Tarnwick sent
     expect(notice("shp-1006")).toBeNull();
     expect(notice("shp-1005")).toBeNull();
   });
@@ -72,7 +72,7 @@ describe("answerQuery", () => {
   it("answers a question about one order from its facts, with the next step", () => {
     const a = answerQuery(parseQuery("order 12345"), facts(["shp-1001"]));
     expect(a.shipmentId).toBe("shp-1001");
-    expect(a.text).toMatch(/^SHP-1001 \(order PO-12345, Arvenza UK Ltd\) is held at customs\./);
+    expect(a.text).toMatch(/^SHP-1001 \(order PO-12345, Oskendra UK Ltd\) is held at customs\./);
     expect(a.text).toContain("Missing: Commercial invoice.");
     expect(a.text).toContain("Suggested next step: Upload commercial invoice.");
   });

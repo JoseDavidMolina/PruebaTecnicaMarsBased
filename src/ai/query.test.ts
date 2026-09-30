@@ -32,7 +32,7 @@ describe("parseQuery", () => {
 
   it("recognises operators, origin sites and customers", () => {
     expect(parseQuery("Alpenweg shipments from Brno")).toMatchObject({ operatorIds: ["alpenweg"], siteIds: ["site-brno"] });
-    expect(parseQuery("anything for Arvenza").customerIds).toEqual(["cust-arvenza-uk", "cust-arvenza-mx"]);
+    expect(parseQuery("anything for Oskendra").customerIds).toEqual(["cust-oskendra-uk", "cust-oskendra-mx"]);
   });
 
   it("reports the words it did not understand instead of guessing", () => {

@@ -4,7 +4,7 @@ import type { EtaWindow, NormalizedStatus, Operator, OperatorId, RawEvent } from
 
 export const OPERATORS: Record<OperatorId, Operator> = {
   transvolta: { id: "transvolta", name: "Transvolta Road Freight", mode: "road", format: "numeric" },
-  kestrel: { id: "kestrel", name: "Kestrel Express", mode: "road", format: "free-text", timeZone: "Europe/Paris" },
+  tarnwick: { id: "tarnwick", name: "Tarnwick Parcel", mode: "road", format: "free-text", timeZone: "Europe/Paris" },
   bluemeridian: { id: "bluemeridian", name: "Blue Meridian Lines", mode: "sea", format: "port-event" },
   alpenweg: { id: "alpenweg", name: "Alpenweg Logistik", mode: "road", format: "short-code", timeZone: "Europe/Vienna" },
 };
@@ -29,8 +29,8 @@ export const TRANSVOLTA_CODES: Record<number, NormalizedStatus> = {
   90: "exception",
 };
 
-/** Kestrel: free text. First matching rule wins, so exceptions go first ("Not delivered" ≠ delivered). */
-export const KESTREL_RULES: [RegExp, NormalizedStatus][] = [
+/** Tarnwick: free text. First matching rule wins, so exceptions go first ("Not delivered" ≠ delivered). */
+export const TARNWICK_RULES: [RegExp, NormalizedStatus][] = [
   [/fail|not delivered|damaged|refused|address issue|lost/i, "exception"],
   [/delivered|signed by/i, "delivered"],
   [/out for delivery|with driver/i, "out_for_delivery"],
@@ -69,13 +69,13 @@ export const ALPENWEG_CODES: Record<string, NormalizedStatus> = {
 
 // --- Raw payload schemas (trust boundary) -------------------------------------
 
-// Kestrel and Alpenweg send local wall-clock times without an offset: read them in the operator's time zone.
+// Tarnwick and Alpenweg send local wall-clock times without an offset: read them in the operator's time zone.
 // ponytail: one zone per operator; a feed spanning several zones would need the zone of each depot.
 const dmyHm = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
 const compact = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/;
 
 const transvoltaSchema = z.object({ code: z.number().int(), ts: z.number().int().positive(), depot: z.string() });
-const kestrelSchema = z.object({
+const tarnwickSchema = z.object({
   status: z.string().min(1),
   time: z.string().regex(dmyHm),
   city: z.string(),
@@ -126,11 +126,11 @@ const parsers: Record<OperatorId, (payload: unknown) => Parsed | null> = {
       location: depot,
     };
   },
-  kestrel(payload) {
-    const r = kestrelSchema.safeParse(payload);
+  tarnwick(payload) {
+    const r = tarnwickSchema.safeParse(payload);
     if (!r.success) return null;
     const { status, time, city, window } = r.data;
-    const tz = OPERATORS.kestrel.timeZone!;
+    const tz = OPERATORS.tarnwick.timeZone!;
     const { y, m, d, at } = fromDmy(time, tz);
     // The window is local time on the same local day as `time`.
     const [from, to] = (window?.split("-") ?? []).map((hm) => {
@@ -139,7 +139,7 @@ const parsers: Record<OperatorId, (payload: unknown) => Parsed | null> = {
     });
     return {
       rawStatus: status,
-      status: KESTREL_RULES.find(([re]) => re.test(status))?.[1] ?? "unknown",
+      status: TARNWICK_RULES.find(([re]) => re.test(status))?.[1] ?? "unknown",
       at,
       location: city,
       eta: from && to ? { earliest: from, latest: to } : undefined,

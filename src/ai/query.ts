@@ -48,7 +48,7 @@ const MODES: Rule<"road" | "sea">[] = [
 
 const OPERATOR_ALIASES: Rule<OperatorId>[] = [
   [/\btransvoltas?\b/, "transvolta", OPERATORS.transvolta.name],
-  [/\bkestrels?\b/, "kestrel", OPERATORS.kestrel.name],
+  [/\btarnwicks?\b/, "tarnwick", OPERATORS.tarnwick.name],
   [/\b(blue meridian|meridian)s?\b/, "bluemeridian", OPERATORS.bluemeridian.name],
   [/\balpenwegs?\b/, "alpenweg", OPERATORS.alpenweg.name],
 ];
@@ -97,7 +97,7 @@ export function parseQuery(text: string, now: Date = DEMO_NOW): ShipmentQuery {
   let rest = ` ${text.toLowerCase()} `;
   const interpretedAs: string[] = [];
 
-  // Match the whole group before consuming text, so rules sharing a word (two "Arvenza" customers) all hit.
+  // Match the whole group before consuming text, so rules sharing a word (two "Oskendra" customers) all hit.
   const take = <T>(rules: Rule<T>[]): T[] => {
     const found: T[] = [];
     for (const [re, value, chip] of rules.filter(([re]) => re.test(rest))) {
