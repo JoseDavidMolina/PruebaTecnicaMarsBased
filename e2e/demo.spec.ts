@@ -54,6 +54,30 @@ test("operations: briefing, search, and an operator update that recalculates the
   await expect(page.getByTestId("row-shp-1002")).toHaveCount(0);
 });
 
+test("an operator message already received never changes: uploading only affects the next one", async ({ page }) => {
+  await page.goto("/shipments/shp-1001");
+  const at0900 = page.locator("li").filter({ hasText: "7 Oct, 09:00 · Dover" });
+  const simulate = page.getByRole("button", { name: "Simulate operator update" });
+
+  // The invoice is still missing, so Transvolta reports the hold again.
+  await simulate.click();
+  await expect(at0900).toHaveCount(1);
+  await expect(at0900).toContainText("Code 40");
+  await expect(page.getByText("reported the hold again")).toBeVisible();
+
+  await page.getByTestId("next-action").getByRole("button", { name: "Upload" }).click();
+  await expect(page.getByTestId("next-action")).not.toContainText("Upload commercial invoice");
+  await expect(at0900).toHaveCount(1);
+  await expect(at0900).toContainText("Code 40");
+
+  // With the file complete, the release arrives as a new event after the hold.
+  await simulate.click();
+  await expect(at0900).toHaveCount(2);
+  await expect(at0900.first()).toContainText("Code 40");
+  await expect(at0900.last()).toContainText("Code 45");
+  await expect(page.getByText("sent its update")).toBeVisible();
+});
+
 test("the briefing and its KPIs describe what the filters show", async ({ page }) => {
   await page.goto("/?site=site-brno");
   await expect(page.getByTestId("daily-summary")).toHaveText("Today: 1 at risk (1 with no recent update), 0 out for delivery, 0 delivered.");
@@ -107,7 +131,7 @@ test("customer: own perimeter, proactive notices and the reported delivery route
 test("nothing scrolls sideways at 390 px, with the full header showing", async ({ page, context, baseURL }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   // An applied update brings the Reset button into the header, its widest state.
-  await context.addCookies([{ name: "demo-sim", value: "shp-1002", url: baseURL! }]);
+  await context.addCookies([{ name: "demo-sim", value: "shp-1002:update", url: baseURL! }]);
   const pages: [string, string][] = [
     ["u-ops-all", "/"],
     ["u-ops-all", "/shipments/shp-1002"],

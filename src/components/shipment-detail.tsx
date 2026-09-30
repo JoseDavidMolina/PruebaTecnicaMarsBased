@@ -5,7 +5,7 @@ import type { ShipmentFacts } from "@/ai/query";
 import type { EtaPrediction, MappingSuggestion } from "@/ai/types";
 import { simulateUpdate } from "@/app/actions";
 import { doneKey, noticeForCustomer } from "@/app/demo";
-import { customerOf, SIMULATED_UPDATES, siteOf } from "@/data";
+import { customerOf, nextOperatorMessage, operatorMessage, siteOf } from "@/data";
 import { OPERATORS } from "@/domain/operators";
 import { hoursSinceUpdate, lastMilestone, unifiedTimeline } from "@/domain/timeline";
 import { DOCUMENT_LABELS, type Leg, type Milestone, type TrackedShipment } from "@/domain/types";
@@ -278,18 +278,22 @@ function DocumentsCard({ shipment, variant }: { shipment: TrackedShipment; varia
   );
 }
 
-function SimulateCard({ shipment, applied }: { shipment: TrackedShipment; applied: boolean }) {
-  if (!SIMULATED_UPDATES[shipment.id]) return null;
-  const operator = OPERATORS[SIMULATED_UPDATES[shipment.id].operatorId].name;
+/** Offered while the operator has a further message to send; what it sends is decided when it is pressed. */
+function SimulateCard({ shipment, received }: { shipment: TrackedShipment; received: string[] }) {
+  const update = operatorMessage(shipment.id, "update");
+  if (!update) return null;
+  const operator = OPERATORS[update.operatorId].name;
   return (
     <Card size="sm" className="border border-dashed border-slate-300 bg-transparent ring-0">
       <CardContent className="space-y-2">
         <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
           <Radio className="size-3.5" /> Demo control
         </div>
-        {applied ? (
+        {!nextOperatorMessage(shipment, received) ? (
           <p className="text-sm text-muted-foreground">
-            {operator} sent its update. ETA, risk and notices were recalculated. Use “Reset demo” in the header to replay it.
+            {received.includes("update")
+              ? `${operator} sent its update. ETA, risk and notices were recalculated. Use “Reset demo” in the header to replay it.`
+              : `${operator} reported the hold again. Customs releases it only once the missing documents are uploaded; its next update comes after that.`}
           </p>
         ) : (
           <form action={simulateUpdate} className="space-y-2">
@@ -357,7 +361,7 @@ function Header({ facts, variant }: { facts: ShipmentFacts; variant: Variant }) 
   );
 }
 
-export async function OpsShipmentDetail({ facts, applied, done }: { facts: ShipmentFacts; applied: boolean; done: string[] }) {
+export async function OpsShipmentDetail({ facts, received, done }: { facts: ShipmentFacts; received: string[]; done: string[] }) {
   const s = facts.shipment;
   const [action, notice, suggestions] = await Promise.all([
     ai.suggestNextAction(s, facts.risk),
@@ -470,14 +474,14 @@ export async function OpsShipmentDetail({ facts, applied, done }: { facts: Shipm
           </Card>
 
           <DocumentsCard shipment={s} variant="ops" />
-          <SimulateCard shipment={s} applied={applied} />
+          <SimulateCard shipment={s} received={received} />
         </div>
       </div>
     </div>
   );
 }
 
-export async function CustomerShipmentDetail({ facts, applied, done }: { facts: ShipmentFacts; applied: boolean; done: string[] }) {
+export async function CustomerShipmentDetail({ facts, received, done }: { facts: ShipmentFacts; received: string[]; done: string[] }) {
   const s = facts.shipment;
   const notice = noticeForCustomer(await ai.customerNotice(s, facts.eta), s.id, done);
   const outForDelivery = facts.status === "out_for_delivery" && s.positions;
@@ -504,7 +508,7 @@ export async function CustomerShipmentDetail({ facts, applied, done }: { facts: 
         </div>
         <div className="space-y-6">
           <DocumentsCard shipment={s} variant="customer" />
-          <SimulateCard shipment={s} applied={applied} />
+          <SimulateCard shipment={s} received={received} />
         </div>
       </div>
     </div>

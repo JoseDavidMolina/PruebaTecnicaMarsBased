@@ -53,8 +53,8 @@ src/ai/                 everything "AI"
 src/data/               synthetic data
   reference.ts          sites, customers, ports/hubs, demo users
   shipments.ts          20 shipments authored as raw payloads in each operator's native format, hours relative to DEMO_NOW;
-                        SIMULATED_UPDATES holds the next raw event per hero shipment (for "simulate operator update")
-  index.ts              SHIPMENTS = RAW_SHIPMENTS.map(track); withSimulatedUpdate, getShipment, siteOf, customerOf
+                        SIMULATED_UPDATES holds the next raw event per hero shipment (for "simulate operator update"); SIMULATED_WHILE_FILE_INCOMPLETE the hold SHP-1001 repeats first
+  index.ts              SHIPMENTS = RAW_SHIPMENTS.map(track); nextOperatorMessage, withMessages, getShipment, siteOf, customerOf
 src/ai/index.ts         `ai`: the single AiService instance the UI uses (swap point)
 src/app/
   demo.ts               getDemo(): user, simulated ids and completed actions from cookies → perimeter-filtered shipments; loadFacts() via `ai`
@@ -69,11 +69,11 @@ src/components/
 e2e/demo.spec.ts        the demo script as a Playwright test
 ```
 
-Demo state is three cookies (`demo-user`, `demo-sim`, `demo-done`). Completing a proposed action takes the shipment out of the "Needs attention" queue until a new operator update reopens it; uploading a document flips it to available, which recomputes risk and the next action. A customer sees a `warning` notice only after ops sent it (`noticeForCustomer` in demo.ts); `info` notices are automatic. A Server Action that sets them re-renders the page, so there is no client-side store. Violet + sparkles marks AI output throughout the UI; keep that convention.
+Demo state is three cookies (`demo-user`, `demo-sim`, `demo-done`). `demo-sim` stores the operator messages received, in arrival order (`shp-1001:hold,shp-1001:update`): the variant is chosen when Simulate is pressed and replayed as stored, so a later upload never rewrites a message already received. Completing a proposed action takes the shipment out of the "Needs attention" queue until a new operator update reopens it; uploading a document flips it to available, which recomputes risk and the next action. A customer sees a `warning` notice only after ops sent it (`noticeForCustomer` in demo.ts); `info` notices are automatic. A Server Action that sets them re-renders the page, so there is no client-side store. Violet + sparkles marks AI output throughout the UI; keep that convention.
 
 Data flow: raw operator events → Zod validation → `normalizeEvent` → `Milestone` (keeps `rawCode`/`rawStatus` next to the normalized `status`) → `TrackedShipment` → `factsFor` / `AiService` derive status, ETA, risk, next action and notices → UI.
 
-- Simulating an operator update is `track({ ...s, events: [...s.events, SIMULATED_UPDATES[s.id]] })`; everything downstream is recomputed.
+- Simulating an operator update appends the stored message's raw event and re-runs `track()` (`withMessages`); everything downstream is recomputed. Same-timestamp messages keep arrival order (stable sort).
 - Normalization is contextual: operators report per leg, so `delivered` on a non-final leg becomes a handover (`at_port`/`in_transit`) in `track()`. Malformed payloads land in `invalidEvents` instead of being dropped silently.
 - Tests pin the demo: `src/data/index.test.ts`, `risk.test.ts` and `service.test.ts` assert the hero scenarios, the risk ranking and the exact ops headline. Changing mock data or heuristics will intentionally break them; update the expectations on purpose.
 - `NOTE(simplification):` comments mark deliberate simplifications and their upgrade path.

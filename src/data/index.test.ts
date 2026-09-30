@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { currentStatus, isStale } from "@/domain/timeline";
-import { getShipment, SHIPMENTS, withSimulatedUpdate, withUploadedDocuments } from ".";
+import { getShipment, nextOperatorMessage, SHIPMENTS, withMessages, withUploadedDocuments } from ".";
 
 const hero = (id: string) => getShipment(id)!;
 
@@ -25,13 +25,35 @@ describe("mock data", () => {
   });
 
   it("clears SHP-1001 through customs only once its invoice is on file", () => {
-    const stillMissing = withSimulatedUpdate(hero("shp-1001"));
+    expect(nextOperatorMessage(hero("shp-1001"), [])).toBe("hold");
+    const stillMissing = withMessages(hero("shp-1001"), ["hold"]);
     expect(currentStatus(stillMissing)).toBe("customs_hold");
     expect(stillMissing.milestones.at(-1)).toMatchObject({ rawStatus: "Code 40", location: "Dover" });
+    // The hold is sent once; the operator's next message waits for the invoice.
+    expect(nextOperatorMessage(stillMissing, ["hold"])).toBeUndefined();
 
-    const complete = withSimulatedUpdate(withUploadedDocuments(hero("shp-1001")));
-    expect(currentStatus(complete)).toBe("customs_cleared");
-    expect(complete.documents.filter((d) => d.status === "missing")).toEqual([]);
+    const complete = withUploadedDocuments(hero("shp-1001"));
+    expect(nextOperatorMessage(complete, [])).toBe("update");
+    expect(nextOperatorMessage(withUploadedDocuments(stillMissing), ["hold"])).toBe("update");
+    expect(currentStatus(withMessages(complete, ["update"]))).toBe("customs_cleared");
+    expect(nextOperatorMessage(complete, ["update"])).toBeUndefined();
+  });
+
+  it("keeps arrival order between messages that share a timestamp", () => {
+    const s = withUploadedDocuments(hero("shp-1001"));
+    const holdThenRelease = withMessages(s, ["hold", "update"]);
+    expect(holdThenRelease.milestones.slice(-2).map((m) => m.rawStatus)).toEqual(["Code 40", "Code 45"]);
+    expect(currentStatus(holdThenRelease)).toBe("customs_cleared");
+    // Reversed arrival, reversed outcome: order comes from arrival, not from the status.
+    expect(currentStatus(withMessages(s, ["update", "hold"]))).toBe("customs_hold");
+  });
+
+  it("gives the other hero shipments their single update", () => {
+    for (const id of ["shp-1002", "shp-1003", "shp-1004"]) {
+      expect(nextOperatorMessage(hero(id), [])).toBe("update");
+      expect(nextOperatorMessage(hero(id), ["update"])).toBeUndefined();
+    }
+    expect(nextOperatorMessage(hero("shp-1005"), [])).toBeUndefined();
   });
 
   it("surfaces the undocumented Alpenweg code as unknown", () => {

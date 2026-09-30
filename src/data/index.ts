@@ -8,13 +8,30 @@ export { SIMULATED_UPDATES };
 
 export const SHIPMENTS: TrackedShipment[] = RAW_SHIPMENTS.map(track);
 
-/** The operator's next message, which can depend on the shipment's file (see SIMULATED_WHILE_FILE_INCOMPLETE). */
-const nextOperatorEvent = (s: TrackedShipment): RawEvent | undefined =>
-  (s.documents.some((d) => d.status === "missing") && SIMULATED_WHILE_FILE_INCOMPLETE[s.id]) || SIMULATED_UPDATES[s.id];
+/** A demo message from the operator: its regular update, or the hold it repeats while the file is incomplete (SHP-1001). */
+export type OperatorMessage = "update" | "hold";
 
-export const withSimulatedUpdate = (s: TrackedShipment): TrackedShipment => {
-  const event = nextOperatorEvent(s);
-  return event ? track({ ...s, events: [...s.events, event] }) : s;
+/** The raw event behind a message, or undefined for an unknown shipment or variant (both can come from a tampered cookie). */
+export const operatorMessage = (shipmentId: string, message: string): RawEvent | undefined => {
+  const events = message === "update" ? SIMULATED_UPDATES : message === "hold" ? SIMULATED_WHILE_FILE_INCOMPLETE : undefined;
+  return events && Object.hasOwn(events, shipmentId) ? events[shipmentId] : undefined;
+};
+
+/**
+ * What the operator sends next, decided from the shipment as it is when the message arrives, never afterwards.
+ * Customs does not release a shipment whose file is incomplete, so until ops uploads it the operator repeats the hold (once).
+ * undefined: nothing left to send, or nothing until the file is complete.
+ */
+export function nextOperatorMessage(s: TrackedShipment, received: readonly string[]): OperatorMessage | undefined {
+  if (!operatorMessage(s.id, "update") || received.includes("update")) return undefined;
+  if (operatorMessage(s.id, "hold") && s.documents.some((d) => d.status === "missing")) return received.includes("hold") ? undefined : "hold";
+  return "update";
+}
+
+/** Replays the messages a shipment received, exactly as they arrived and in that order. */
+export const withMessages = (s: TrackedShipment, received: readonly string[]): TrackedShipment => {
+  const events = received.flatMap((m) => operatorMessage(s.id, m) ?? []);
+  return events.length ? track({ ...s, events: [...s.events, ...events] }) : s;
 };
 
 export const withUploadedDocuments = (s: TrackedShipment): TrackedShipment => ({

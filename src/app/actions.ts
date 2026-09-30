@@ -2,8 +2,8 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { SIMULATED_UPDATES, USERS } from "@/data";
-import { ACTION_KINDS, type ActionKind, doneKey, DONE_COOKIE, getDemo, SIM_COOKIE, USER_COOKIE } from "./demo";
+import { nextOperatorMessage, USERS } from "@/data";
+import { ACTION_KINDS, type ActionKind, doneKey, DONE_COOKIE, getDemo, receivedBy, SIM_COOKIE, simKey, USER_COOKIE } from "./demo";
 
 // Inputs are checked against the known ids and the current user's perimeter: Server Actions are reachable by direct POST.
 
@@ -21,11 +21,13 @@ export async function switchUser(formData: FormData) {
  */
 export async function simulateUpdate(formData: FormData) {
   const id = String(formData.get("shipmentId"));
-  const { shipments } = await getDemo();
-  if (!(id in SIMULATED_UPDATES) || !shipments.some((s) => s.id === id)) return;
+  const { shipments, simulated } = await getDemo();
+  const shipment = shipments.find((s) => s.id === id);
+  // Which message arrives is decided now, from the file as it is now, and stored as received.
+  const message = shipment && nextOperatorMessage(shipment, receivedBy(simulated, id));
+  if (!message) return;
   const jar = await cookies();
-  const current = list(jar.get(SIM_COOKIE)?.value);
-  if (!current.includes(id)) jar.set(SIM_COOKIE, [...current, id].join(","));
+  jar.set(SIM_COOKIE, [...simulated, simKey(id, message)].join(","));
   // New operator information reopens the case: what ops decided before may no longer apply.
   // An uploaded document is a fact, not a decision, so it stays uploaded.
   const keep = (k: string) => !k.startsWith(`${id}:`) || k === doneKey(id, "upload_document");
