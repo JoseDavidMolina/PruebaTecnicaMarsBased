@@ -32,7 +32,7 @@ Playwright needs Chromium once (`pnpm exec playwright install chromium`). When c
 
 `dev` and `build` pass `--webpack` because the native SWC binary (needed by Turbopack) is blocked by Windows Application Control on the author's machine; webpack falls back to WASM. Drop the flag if the binary loads.
 
-Do not add dependencies without asking the user first. Installed stack: Next.js 16 (App Router), React 19, TypeScript strict, Tailwind 4, shadcn/ui (radix-nova style), Zod 4, Vitest, Playwright, react-leaflet + OpenStreetMap tiles.
+Do not add dependencies without asking the user first. Installed stack: Next.js 16 (App Router), React 19, TypeScript strict, Tailwind 4, shadcn/ui components copied into `src/components/ui` (no shadcn runtime package; add more with `pnpm dlx shadcn add`), Zod 4, Vitest, Playwright, react-leaflet + OpenStreetMap tiles.
 
 ## Architecture
 
