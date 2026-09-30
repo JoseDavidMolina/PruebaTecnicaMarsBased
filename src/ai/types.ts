@@ -41,6 +41,7 @@ export const DailySummarySchema = z.object({
     exceptions: z.number().int(),
     outForDelivery: z.number().int(),
     deliveredToday: z.number().int(),
+    handled: z.number().int(), // at-risk shipments whose proposed action ops already completed
   }),
   items: z.array(z.object({ shipmentId: z.string(), score: z.number().int(), action: NextActionSchema })),
 });

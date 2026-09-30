@@ -38,6 +38,8 @@ test("operations: briefing, search, and an operator update that recalculates the
   await expect(page.getByTestId("next-action")).toContainText("Notice sent");
   await page.goto("/");
   await expect(page.getByTestId("handled-count")).toHaveText("1 handled today");
+  await expect(page.getByTestId("daily-summary")).toContainText("5 at risk (1 held at customs");
+  await expect(page.getByTestId("daily-summary")).toContainText("· 1 handled today.");
   await expect(page.getByTestId("row-shp-1002")).toHaveCount(0);
 });
 

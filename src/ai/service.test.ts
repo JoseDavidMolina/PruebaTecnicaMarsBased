@@ -27,6 +27,15 @@ describe("summarizeDay", () => {
     // SHP-1005 was delivered at 13:00 yesterday (within 24 h); SHP-1015 at 07:00 today.
     expect(summarizeDay(SHIPMENTS).counts.deliveredToday).toBe(1);
   });
+
+  it("says how many at-risk shipments ops already handled, without changing the risk counts", () => {
+    const before = summarizeDay(SHIPMENTS);
+    // shp-1006 is on track: handling it is not at-risk work, so it does not count.
+    const after = summarizeDay(SHIPMENTS, ["shp-1001", "shp-1002", "shp-1006"]);
+    expect(after.counts).toEqual({ ...before.counts, handled: 2 });
+    expect(after.headline).toBe(before.headline.replace(/\.$/, " · 2 handled today."));
+    expect(before.counts.handled).toBe(0);
+  });
 });
 
 describe("suggestNextAction", () => {

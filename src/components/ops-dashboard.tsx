@@ -39,14 +39,17 @@ export async function OpsDashboard({
   const filtered = facts
     .filter((f) => !params.site || f.shipment.originSiteId === params.site)
     .filter((f) => !params.op || f.shipment.legs.some((l) => l.operatorId === params.op));
-  // The briefing describes what the filters show, so its counts match the queue and the KPI drill-downs.
-  const summary = await ai.summarizeDay(filtered.map((f) => f.shipment));
   const actions = new Map(await Promise.all(filtered.map(async (f) => [f.shipment.id, await ai.suggestNextAction(f.shipment, f.risk)] as const)));
   const handled = (f: ShipmentFacts) => done.includes(doneKey(f.shipment.id, actions.get(f.shipment.id)!.kind));
   // Managing by exception: once ops has acted on the proposed action, the shipment leaves the queue until something new happens.
   const atRisk = filtered.filter((f) => f.risk.level !== "low");
   const attention = atRisk.filter((f) => !handled(f));
   const handledCount = atRisk.length - attention.length;
+  // The briefing describes what the filters show, so its counts match the queue and the KPI drill-downs.
+  const summary = await ai.summarizeDay(
+    filtered.map((f) => f.shipment),
+    atRisk.filter(handled).map((f) => f.shipment.id),
+  );
   const view = query ? "search" : params.view === "all" ? "all" : "attention";
   const matches = query ? filtered.filter((f) => matchQuery(query, f)) : [];
   const rows = (query ? matches : view === "all" ? filtered : attention).sort(

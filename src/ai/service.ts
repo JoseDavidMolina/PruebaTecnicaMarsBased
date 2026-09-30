@@ -34,7 +34,8 @@ export interface AiService {
   assessRisk(s: TrackedShipment): Promise<RiskAssessment>;
   predictEta(s: TrackedShipment): Promise<EtaPrediction>;
   suggestNextAction(s: TrackedShipment, risk: RiskAssessment): Promise<NextAction>;
-  summarizeDay(shipments: TrackedShipment[]): Promise<DailySummary>;
+  /** `handledIds`: shipments whose proposed action ops already completed today. */
+  summarizeDay(shipments: TrackedShipment[], handledIds?: string[]): Promise<DailySummary>;
   parseQuery(text: string): Promise<ShipmentQuery>;
   customerNotice(s: TrackedShipment, eta: EtaPrediction): Promise<CustomerNotice | null>;
   /** A direct answer to a search, grounded only in the matching shipments' facts. */
@@ -96,7 +97,8 @@ const SUMMARY_CAUSES: [RiskFlag, string][] = [
   ["missing_document", "missing documents"],
 ];
 
-export function summarizeDay(shipments: TrackedShipment[], now: Date = DEMO_NOW): DailySummary {
+/** `handledIds`: shipments whose proposed action ops already completed. They stay in the risk counts. */
+export function summarizeDay(shipments: TrackedShipment[], handledIds: string[] = [], now: Date = DEMO_NOW): DailySummary {
   const assessed = shipments.map((s) => ({ s, risk: assessRisk(s, now) }));
   const open = assessed.filter(({ s }) => currentStatus(s) !== "delivered");
   const atRisk = open.filter(({ risk }) => risk.level !== "low").sort((a, b) => b.risk.score - a.risk.score);
@@ -114,6 +116,7 @@ export function summarizeDay(shipments: TrackedShipment[], now: Date = DEMO_NOW)
       const d = s.milestones.findLast((m) => m.status === "delivered");
       return d && d.at >= startOfDay(now) && d.at <= now.toISOString();
     }).length,
+    handled: atRisk.filter(({ s }) => handledIds.includes(s.id)).length,
   };
 
   const causes = atRisk.map(({ risk }) => SUMMARY_CAUSES.find(([f]) => risk.flags.includes(f)));
@@ -124,7 +127,8 @@ export function summarizeDay(shipments: TrackedShipment[], now: Date = DEMO_NOW)
   return {
     headline:
       `Today: ${counts.atRisk} at risk${detail.length ? ` (${detail.join(", ")})` : ""}, ` +
-      `${counts.outForDelivery} out for delivery, ${counts.deliveredToday} delivered.`,
+      `${counts.outForDelivery} out for delivery, ${counts.deliveredToday} delivered` +
+      (counts.handled ? ` · ${counts.handled} handled today.` : "."),
     counts,
     items: atRisk.map(({ s, risk }) => ({ shipmentId: s.id, score: risk.score, action: suggestNextAction(s, risk) })),
   };
@@ -271,7 +275,7 @@ export const mockAiService: AiService = {
   assessRisk: async (s) => RiskAssessmentSchema.parse(assessRisk(s)),
   predictEta: async (s) => EtaPredictionSchema.parse(predictEta(s)),
   suggestNextAction: async (s, risk) => NextActionSchema.parse(suggestNextAction(s, risk)),
-  summarizeDay: async (shipments) => DailySummarySchema.parse(summarizeDay(shipments)),
+  summarizeDay: async (shipments, handledIds) => DailySummarySchema.parse(summarizeDay(shipments, handledIds)),
   parseQuery: async (text) => ShipmentQuerySchema.parse(parseQuery(text)),
   customerNotice: async (s, eta) => {
     const notice = customerNotice(s, eta);
