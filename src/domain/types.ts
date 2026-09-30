@@ -85,6 +85,15 @@ export type DocumentKind =
   | "customs_declaration"
   | "proof_of_delivery";
 
+export const DOCUMENT_LABELS: Record<DocumentKind, string> = {
+  commercial_invoice: "Commercial invoice",
+  packing_list: "Packing list",
+  cmr: "CMR waybill",
+  bill_of_lading: "Bill of lading",
+  customs_declaration: "Customs declaration",
+  proof_of_delivery: "Proof of delivery",
+};
+
 export type ShipmentDocument = {
   id: string;
   kind: DocumentKind;

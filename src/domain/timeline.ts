@@ -47,6 +47,9 @@ export function currentStatus(s: TrackedShipment): NormalizedStatus {
 
 export const lastMilestone = (s: TrackedShipment): Milestone | undefined => s.milestones.at(-1);
 
+/** Latest arrival estimate the operator itself reported for a leg (confirmed data). */
+export const reportedEta = (s: TrackedShipment, legId: string) => s.milestones.findLast((m) => m.legId === legId && m.eta)?.eta;
+
 export function activeLeg(s: TrackedShipment): Leg {
   const last = lastMilestone(s);
   return s.legs.find((l) => l.id === last?.legId) ?? s.legs[0];

@@ -17,3 +17,19 @@ export const formatDate = (iso: string): string =>
 
 export const formatTime = (iso: string): string =>
   new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: DISPLAY_TZ }).format(new Date(iso));
+
+export const formatDateRange = (from: string, to: string): string => {
+  const [a, b] = [formatDate(from), formatDate(to)];
+  return a === b ? a : `${a} – ${b}`;
+};
+
+/** "7 hours", "2 days": for delays shown to people. */
+export const formatDuration = (hours: number): string => {
+  const h = Math.abs(hours);
+  if (h < 24) {
+    const n = Math.max(1, Math.round(h));
+    return `${n} hour${n === 1 ? "" : "s"}`;
+  }
+  const d = Math.round(h / 24);
+  return `${d} day${d === 1 ? "" : "s"}`;
+};

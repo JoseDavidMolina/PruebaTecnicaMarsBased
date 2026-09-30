@@ -1,5 +1,6 @@
 import { addHours, DEMO_NOW } from "@/lib/clock";
 import { OPERATORS } from "@/domain/operators";
+import { DOCUMENT_LABELS } from "@/domain/types";
 import type { DocumentKind, OperatorId, Place, Position, RawEvent, Shipment, ShipmentDocument } from "@/domain/types";
 import { CUSTOMERS, HUBS, PORTS, SITES } from "./reference";
 
@@ -47,15 +48,6 @@ type Spec = {
   positions?: [lat: number, lng: number, minutesAgo: number][];
 };
 
-const DOC_LABELS: Record<DocumentKind, string> = {
-  commercial_invoice: "Commercial invoice",
-  packing_list: "Packing list",
-  cmr: "CMR waybill",
-  bill_of_lading: "Bill of lading",
-  customs_declaration: "Customs declaration",
-  proof_of_delivery: "Proof of delivery",
-};
-
 const NON_EU = ["GB", "MX"];
 const site = (id: string) => SITES.find((s) => s.id === id)!;
 const customer = (id: string) => CUSTOMERS.find((c) => c.id === id)!;
@@ -91,7 +83,7 @@ function build(spec: Spec): Shipment {
   const documents = Object.entries(kinds).map(([kind, status]) => ({
     id: `${id}-${kind}`,
     kind: kind as DocumentKind,
-    name: `${DOC_LABELS[kind as DocumentKind]} ${reference}.pdf`,
+    name: `${DOCUMENT_LABELS[kind as DocumentKind]} ${reference}.pdf`,
     status: status!,
   }));
 
