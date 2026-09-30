@@ -1,15 +1,27 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Barlow, Overpass_Mono } from "next/font/google";
 import Link from "next/link";
-import { Package, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { USERS } from "@/data";
 import { AutoSubmitSelect, LiveRefresh, SubmitButton } from "@/components/client-controls";
 import { resetDemo, switchUser } from "./actions";
 import { getDemo } from "./demo";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+// Barlow and Overpass Mono both descend from road-sign lettering; the mono is kept for verbatim operator data.
+// Only latin is preloaded: latin-ext (Tomáš, México) still loads on demand through unicode-range.
+const barlow = Barlow({ variable: "--font-barlow", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+const overpassMono = Overpass_Mono({ variable: "--font-overpass-mono", subsets: ["latin"], preload: false });
+
+/** A route from an origin (dot) to a destination (square). Same drawing as app/icon.svg. */
+const Mark = () => (
+  <svg viewBox="0 0 32 32" className="size-7" aria-hidden="true">
+    <rect width="32" height="32" rx="7" fill="var(--primary)" />
+    <path d="M11 21.5h3.5a3.5 3.5 0 0 0 3.5-3.5v-4a3.5 3.5 0 0 1 3.5-3.5" fill="none" stroke="#fff" strokeWidth="2.5" />
+    <circle cx="8.5" cy="21.5" r="3" fill="#fff" />
+    <rect x="21.5" y="7.5" width="5.5" height="5.5" rx="1" fill="none" stroke="#fff" strokeWidth="2.5" />
+  </svg>
+);
 
 export const metadata: Metadata = {
   title: "Oskendra Shipment Tracker",
@@ -22,14 +34,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const customers = USERS.filter((u) => u.role === "customer");
 
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" className={`${barlow.variable} ${overpassMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <header className="sticky top-0 z-[1000] border-b bg-white/90 backdrop-blur">
+        <header className="sticky top-0 z-[1000] border-b bg-card/90 backdrop-blur">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
             <Link href="/" className="flex items-center gap-2 font-semibold">
-              <span className="grid size-7 place-items-center rounded-md bg-slate-900 text-white">
-                <Package className="size-4" />
-              </span>
+              <Mark />
               Oskendra <span className="font-normal text-muted-foreground">Shipment Tracker</span>
             </Link>
             {/* Off in e2e runs (playwright.config.ts) so a refresh never lands mid-assertion. */}

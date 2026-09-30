@@ -5,8 +5,7 @@ import { useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { cn } from "@/lib/utils";
 
-const selectClass =
-  "h-9 rounded-md border border-input bg-background px-2.5 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50";
+const selectClass = "h-9 rounded-md border border-input bg-card px-2.5 text-sm";
 
 /**
  * Native select that submits its form once a choice is made (user switcher, filters). A pointer pick submits at

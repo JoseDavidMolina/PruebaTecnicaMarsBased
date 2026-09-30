@@ -23,7 +23,7 @@ const EXAMPLES = [
   "Alpenweg shipments from Brno",
 ];
 
-const tabClass = (active: boolean) => cn("-mb-px pb-2", active ? "border-b-2 border-slate-900 font-medium" : "text-muted-foreground");
+const tabClass = (active: boolean) => cn("-mb-px pb-2", active ? "border-b-2 border-primary font-medium" : "text-muted-foreground");
 
 const href = (params: DashboardParams) => {
   const qs = new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => Boolean(e[1])));
@@ -92,7 +92,7 @@ export async function OpsDashboard({
         </p>
       </div>
 
-      <Card className="border-violet-200 bg-gradient-to-br from-violet-50/80 to-white ring-violet-200">
+      <Card className="ring-violet-200">
         <CardContent className="space-y-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <AiTag label="Daily briefing" /> generated at {formatTime(DEMO_NOW.toISOString())} {zoneName()} from the latest operator updates
@@ -106,7 +106,7 @@ export async function OpsDashboard({
               <Link
                 key={k.label}
                 href={k.href}
-                className="rounded-lg border bg-white px-3 py-2 transition-colors hover:border-foreground/30 hover:bg-muted"
+                className="rounded-lg border bg-card px-3 py-2 transition-colors hover:border-foreground/30 hover:bg-muted"
               >
                 <div className={cn("text-xl font-semibold tabular-nums", k.value === 0 ? "text-muted-foreground" : k.tone)}>{k.value}</div>
                 <div className="text-xs text-muted-foreground">{k.label}</div>
@@ -126,10 +126,7 @@ export async function OpsDashboard({
                 defaultValue={params.q}
                 aria-label="Ask about your shipments"
                 placeholder="Ask about your shipments, e.g. “shipments to France this week running late”"
-                className={cn(
-                  "h-9 w-full rounded-md border border-input bg-background pr-3 pl-9 text-sm shadow-xs outline-none",
-                  "focus-visible:ring-[3px] focus-visible:ring-violet-300",
-                )}
+                className="h-9 w-full rounded-md border border-input bg-card pr-3 pl-9 text-sm"
               />
             </div>
             <AutoSubmitSelect name="site" defaultValue={params.site ?? ""} aria-label="Origin site">
@@ -150,7 +147,7 @@ export async function OpsDashboard({
             </AutoSubmitSelect>
             <button
               type="submit"
-              className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-900 px-3 text-sm font-medium text-white hover:bg-slate-800"
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               <Search className="size-4" /> Search
             </button>
@@ -182,7 +179,7 @@ export async function OpsDashboard({
             <div className="flex gap-3 rounded-lg border border-violet-200 bg-violet-50/60 p-3 text-sm" data-testid="query-answer">
               <Sparkles className="mt-0.5 size-4 shrink-0 text-violet-600" />
               <div className="space-y-1">
-                <p className="text-slate-800">{answer.text}</p>
+                <p className="text-foreground">{answer.text}</p>
                 {answer.shipmentId && (
                   <Link href={`/shipments/${answer.shipmentId}`} className="text-xs font-medium text-violet-800 hover:underline">
                     Open shipment →
@@ -211,7 +208,7 @@ export async function OpsDashboard({
       <section className="space-y-3">
         <div className="flex items-center gap-4 border-b text-sm">
           {query ? (
-            <span className="-mb-px border-b-2 border-slate-900 pb-2 font-medium">Search results ({rows.length})</span>
+            <span className="-mb-px border-b-2 border-primary pb-2 font-medium">Search results ({rows.length})</span>
           ) : (
             <>
               <Link href={scoped()} className={tabClass(view === "attention")}>

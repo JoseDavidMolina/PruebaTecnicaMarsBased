@@ -10,7 +10,7 @@ import type { Confidence, Leg, NormalizedStatus, Reliability } from "@/domain/ty
 type Tone = "neutral" | "blue" | "amber" | "red" | "green" | "violet";
 
 const TONES: Record<Tone, string> = {
-  neutral: "bg-slate-100 text-slate-700 ring-slate-500/15",
+  neutral: "bg-muted text-foreground ring-foreground/10",
   blue: "bg-sky-50 text-sky-800 ring-sky-600/20",
   amber: "bg-amber-50 text-amber-800 ring-amber-600/25",
   red: "bg-red-50 text-red-700 ring-red-600/20",
@@ -74,7 +74,7 @@ export function ReliabilityBadge({ reliability }: { reliability: Reliability }) 
   ) : (
     <Pill
       tone="neutral"
-      className="border border-dashed border-slate-400 bg-transparent ring-0"
+      className="border border-dashed border-muted-foreground bg-transparent ring-0"
       title="Estimated by us, not reported by the operator"
     >
       <CircleDashed /> Estimated
@@ -89,7 +89,7 @@ export function ConfidenceMeter({ confidence }: { confidence: Confidence }) {
     <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" title="How sure the estimate is">
       <span className="flex gap-0.5">
         {[0, 1, 2].map((i) => (
-          <span key={i} className={cn("h-2.5 w-1 rounded-full", i < filled ? color : "bg-slate-200")} />
+          <span key={i} className={cn("h-2.5 w-1 rounded-full", i < filled ? color : "bg-border")} />
         ))}
       </span>
       {confidence[0].toUpperCase() + confidence.slice(1)} confidence

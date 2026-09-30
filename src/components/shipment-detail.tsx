@@ -39,10 +39,10 @@ function LegHeader({ leg, variant }: { leg: Leg; variant: Variant }) {
   const Icon = MODE_ICON[leg.mode];
   return (
     <li className="relative pb-3 pl-8">
-      <span className="absolute top-0.5 left-0 grid size-5 place-items-center rounded-md bg-slate-100 text-slate-600">
+      <span className="absolute top-0.5 left-0 grid size-5 place-items-center rounded-md bg-muted text-muted-foreground">
         <Icon className="size-3.5" />
       </span>
-      <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+      <div className="text-xs font-semibold text-muted-foreground">
         {leg.mode === "sea" ? "Sea" : "Road"} · {leg.from.name} → {leg.to.name}
       </div>
       {variant === "ops" && (
@@ -74,7 +74,11 @@ function TimelineItem({
       <span
         className={cn(
           "absolute top-1 left-1.5 size-2.5 rounded-full",
-          estimated ? "border-2 border-dashed border-slate-400 bg-white" : upcoming ? "border-2 border-slate-900 bg-white" : "bg-slate-900",
+          estimated
+            ? "border-2 border-dashed border-muted-foreground bg-card"
+            : upcoming
+              ? "border-2 border-primary bg-card"
+              : "bg-primary",
         )}
       />
       <div className="flex flex-wrap items-center gap-2">
@@ -95,7 +99,7 @@ function OperatorTrace({ m }: { m: Milestone }) {
       {OPERATORS[m.operatorId].name}
       <span
         className={cn(
-          "ml-2 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600",
+          "ml-2 rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground",
           m.status === "unknown" && "bg-amber-100 text-amber-900",
         )}
         title="Exactly what the operator sent, before normalization"
@@ -142,7 +146,7 @@ export function Timeline({
   const legOf = (m: Milestone) => shipment.legs.find((l) => l.id === m.legId)!;
 
   return (
-    <ol className="relative before:absolute before:top-2 before:bottom-6 before:left-[10px] before:w-px before:bg-slate-200">
+    <ol className="relative before:absolute before:top-2 before:bottom-6 before:left-[10px] before:w-px before:bg-border">
       {groups.map((group, i) => {
         const m = group.at(-1)!; // the latest report carries the freshest details
         const earlier = group.slice(0, -1);
@@ -185,7 +189,7 @@ export function Timeline({
               )}
               {variant === "ops" && suggestion && (
                 <div
-                  className="mt-1.5 flex gap-2 rounded-md border border-violet-200 bg-violet-50/60 p-2 text-xs text-slate-700"
+                  className="mt-1.5 flex gap-2 rounded-md border border-violet-200 bg-violet-50/60 p-2 text-xs text-foreground"
                   data-testid="mapping-suggestion"
                 >
                   <Sparkles className="mt-0.5 size-3.5 shrink-0 text-violet-600" />
@@ -233,11 +237,11 @@ export function EtaCard({ facts, variant }: { facts: ShipmentFacts; variant: Var
   return (
     <Card>
       <CardContent className="space-y-3">
-        <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+        <div className="text-xs font-semibold text-muted-foreground">
           {delivered ? "Delivered" : eta.reliability === "confirmed" ? "Delivery window" : "Estimated delivery"}
         </div>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="text-3xl font-semibold tracking-tight" data-testid="eta-main">
+          <span className="text-4xl font-semibold tracking-tight tabular-nums" data-testid="eta-main">
             {t.main}
           </span>
           {t.sub && <span className="text-sm text-muted-foreground">{t.sub}</span>}
@@ -252,7 +256,7 @@ export function EtaCard({ facts, variant }: { facts: ShipmentFacts; variant: Var
         </div>
         {/* A delivery is the operator's fact, not an estimate: nothing for the AI to explain. */}
         {variant === "ops" && !delivered && (
-          <p className="flex gap-2 rounded-md bg-slate-50 p-3 text-sm text-slate-700">
+          <p className="flex gap-2 rounded-md bg-muted p-3 text-sm text-foreground">
             <Sparkles className="mt-0.5 size-4 shrink-0 text-violet-600" />
             <span>
               <span className="font-medium">Why this ETA: </span>
@@ -286,7 +290,7 @@ function DocumentsCard({ shipment, variant }: { shipment: TrackedShipment; varia
                   target="_blank"
                   rel="noopener"
                   aria-label={`Open ${DOCUMENT_LABELS[d.kind]} (demo)`}
-                  className="text-xs font-medium text-slate-700 underline-offset-2 hover:underline"
+                  className="text-xs font-medium text-foreground underline-offset-2 hover:underline"
                 >
                   PDF
                 </a>
@@ -305,9 +309,9 @@ function SimulateCard({ shipment, received }: { shipment: TrackedShipment; recei
   if (!update) return null;
   const operator = OPERATORS[update.operatorId].name;
   return (
-    <Card size="sm" className="border border-dashed border-slate-300 bg-transparent ring-0">
+    <Card size="sm" className="border border-dashed border-border bg-transparent ring-0">
       <CardContent className="space-y-2">
-        <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
           <Radio className="size-3.5" /> Demo control
         </div>
         {!nextOperatorMessage(shipment, received) ? (
@@ -320,7 +324,10 @@ function SimulateCard({ shipment, received }: { shipment: TrackedShipment; recei
           <form action={simulateUpdate} className="space-y-2">
             <p className="text-sm text-muted-foreground">Inject the next message from {operator}, as it would arrive from their feed.</p>
             <input type="hidden" name="shipmentId" value={shipment.id} />
-            <SubmitButton pendingText="Receiving update…" className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800">
+            <SubmitButton
+              pendingText="Receiving update…"
+              className="w-full justify-center bg-primary text-primary-foreground hover:bg-primary/90"
+            >
               <RefreshCw /> Simulate operator update
             </SubmitButton>
           </form>
@@ -440,7 +447,7 @@ export async function OpsShipmentDetail({ facts, received, done }: { facts: Ship
             <CardContent className="space-y-4">
               <RiskBadge risk={facts.risk} />
               {facts.risk.reasons.length > 0 ? (
-                <ul className="list-disc space-y-1 pl-4 text-sm text-slate-700">
+                <ul className="list-disc space-y-1 pl-4 text-sm text-foreground">
                   {facts.risk.reasons.map((r) => (
                     <li key={r}>{r}</li>
                   ))}
@@ -449,11 +456,11 @@ export async function OpsShipmentDetail({ facts, received, done }: { facts: Ship
                 <p className="text-sm text-muted-foreground">No risk factors detected.</p>
               )}
               <div className="rounded-lg border border-violet-200 bg-violet-50/60 p-3" data-testid="next-action">
-                <div className="mb-1 text-xs font-medium tracking-wide text-violet-800 uppercase">Proposed next action</div>
+                <div className="mb-1 text-xs font-semibold text-violet-800">Proposed next action</div>
                 <div className="flex gap-2 font-medium">
                   <Icon className="mt-0.5 size-4 shrink-0 text-violet-700" /> {action.label}
                 </div>
-                {action.rationale && <p className="mt-1 text-sm text-slate-700">{action.rationale}</p>}
+                {action.rationale && <p className="mt-1 text-sm text-foreground">{action.rationale}</p>}
                 <div className="mt-3">
                   <ActionControl shipmentId={s.id} action={action} done={done.includes(doneKey(s.id, action.kind))} />
                 </div>
@@ -480,11 +487,11 @@ export async function OpsShipmentDetail({ facts, received, done }: { facts: Ship
                   <div
                     className={cn(
                       "rounded-md border p-3 text-sm",
-                      notice.severity === "warning" ? "border-amber-200 bg-amber-50" : "bg-slate-50",
+                      notice.severity === "warning" ? "border-amber-200 bg-amber-50" : "bg-muted",
                     )}
                   >
                     <div className="font-medium">{notice.title}</div>
-                    <p className="mt-1 text-slate-700">{notice.body}</p>
+                    <p className="mt-1 text-foreground">{notice.body}</p>
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                     {notice.severity === "info"
@@ -567,7 +574,7 @@ export function NoticeBanner({ notice, href }: { notice: { title: string; body: 
       )}
       <div>
         <div className="font-medium">{notice.title}</div>
-        <p className="text-sm text-slate-700">{notice.body}</p>
+        <p className="text-sm text-foreground">{notice.body}</p>
       </div>
     </div>
   );

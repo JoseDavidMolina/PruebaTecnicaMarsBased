@@ -80,7 +80,9 @@ export async function CustomerHome({
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">{delivered ? "Delivered" : "Arriving"}</div>
-                    <div className="text-xl font-semibold tracking-tight">{delivered ? t.main.replace("Delivered ", "") : t.main}</div>
+                    <div className="text-2xl font-semibold tracking-tight tabular-nums">
+                      {delivered ? t.main.replace("Delivered ", "") : t.main}
+                    </div>
                     {t.sub && <div className="text-xs text-muted-foreground">{t.sub}</div>}
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
