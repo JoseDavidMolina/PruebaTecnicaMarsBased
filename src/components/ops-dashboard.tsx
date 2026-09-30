@@ -72,8 +72,9 @@ export async function OpsDashboard({
   const c = summary.counts;
   // Every KPI keeps the current filters, so its drill-down shows the same number.
   const scoped = (q?: string) => href({ q, site: params.site, op: params.op });
+  // The first chip counts what is still open, so it always matches the queue it opens (handled cases leave it).
   const kpis = [
-    { label: "At risk", value: c.atRisk, href: scoped(), tone: "text-red-700" },
+    { label: "Need attention", value: attention.length, href: scoped(), tone: "text-red-700" },
     { label: "Held at customs", value: c.customsHold, href: scoped("held at customs") },
     { label: "Delayed at port", value: c.portDelay, href: scoped("delayed at port") },
     { label: "No recent update", value: c.stale, href: scoped("stale") },
@@ -84,32 +85,32 @@ export async function OpsDashboard({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Good morning, {user.name.split(" ")[0]}</h1>
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h1 className="text-base font-semibold">Good morning, {user.name.split(" ")[0]}</h1>
         <p className="text-sm text-muted-foreground">
-          {formatLongDate(DEMO_NOW.toISOString())} · {shipments.length} active and recent shipments from{" "}
+          {formatLongDate(DEMO_NOW.toISOString())}, {shipments.length} active and recent shipments from{" "}
           {new Intl.ListFormat("en").format(sites.map((s) => s.name))}
         </p>
       </div>
 
       <Card className="ring-violet-200">
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <AiTag label="Daily briefing" /> generated at {formatTime(DEMO_NOW.toISOString())} {zoneName()} from the latest operator updates
             {scope.length > 0 && <span className="font-medium text-foreground">· {scope.join(" · ")} only</span>}
           </div>
-          <p className="text-lg leading-snug font-medium text-balance" data-testid="daily-summary">
+          <p className="max-w-[60ch] text-xl leading-snug font-medium text-balance sm:text-2xl" data-testid="daily-summary">
             {summary.headline}
           </p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+          <div className="flex flex-wrap gap-2">
             {kpis.map((k) => (
               <Link
                 key={k.label}
                 href={k.href}
-                className="rounded-lg border bg-card px-3 py-2 transition-colors hover:border-foreground/30 hover:bg-muted"
+                className="inline-flex h-8 items-baseline gap-1.5 rounded-full border bg-card px-3 pt-1.5 text-sm transition-colors hover:border-foreground/30 hover:bg-muted"
               >
-                <div className={cn("text-xl font-semibold tabular-nums", k.value === 0 ? "text-muted-foreground" : k.tone)}>{k.value}</div>
-                <div className="text-xs text-muted-foreground">{k.label}</div>
+                <span className={cn("font-semibold tabular-nums", k.value === 0 ? "text-muted-foreground" : k.tone)}>{k.value}</span>
+                <span className="text-muted-foreground">{k.label}</span>
               </Link>
             ))}
           </div>

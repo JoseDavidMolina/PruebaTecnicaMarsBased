@@ -8,11 +8,11 @@ import { journeyOf, type LegProgress } from "@/lib/journey";
 import type { EtaPrediction, NextAction, RiskAssessment } from "@/ai/types";
 import type { Confidence, Leg, NormalizedStatus, Reliability, TrackedShipment } from "@/domain/types";
 
-type Tone = "neutral" | "blue" | "amber" | "red" | "green" | "violet";
+type Tone = "neutral" | "moving" | "amber" | "red" | "green" | "violet";
 
 const TONES: Record<Tone, string> = {
   neutral: "bg-muted text-foreground ring-foreground/10",
-  blue: "bg-sky-50 text-sky-800 ring-sky-600/20",
+  moving: "bg-primary/5 text-primary ring-primary/20", // movement is normal: brand ink, no signal colour
   amber: "bg-amber-50 text-amber-800 ring-amber-600/25",
   red: "bg-red-50 text-red-700 ring-red-600/20",
   green: "bg-emerald-50 text-emerald-800 ring-emerald-600/20",
@@ -46,13 +46,13 @@ export function Pill({
 
 export const STATUS: Record<NormalizedStatus, { label: string; tone: Tone }> = {
   booked: { label: "Booked", tone: "neutral" },
-  picked_up: { label: "Picked up", tone: "blue" },
-  in_transit: { label: "In transit", tone: "blue" },
-  at_port: { label: "At port", tone: "blue" },
-  on_vessel: { label: "At sea", tone: "blue" },
+  picked_up: { label: "Picked up", tone: "moving" },
+  in_transit: { label: "In transit", tone: "moving" },
+  at_port: { label: "At port", tone: "moving" },
+  on_vessel: { label: "At sea", tone: "moving" },
   customs_hold: { label: "Held at customs", tone: "red" },
-  customs_cleared: { label: "Customs cleared", tone: "blue" },
-  out_for_delivery: { label: "Out for delivery", tone: "blue" },
+  customs_cleared: { label: "Customs cleared", tone: "moving" },
+  out_for_delivery: { label: "Out for delivery", tone: "moving" },
   delivered: { label: "Delivered", tone: "green" },
   exception: { label: "Incident", tone: "red" },
   unknown: { label: "Unrecognised update", tone: "amber" },
@@ -69,7 +69,7 @@ export const StaleBadge = ({ hours }: { hours: number }) => (
 /** Confirmed = reported by the operator. Estimated = computed by us. Always shown, never implied. */
 export function ReliabilityBadge({ reliability }: { reliability: Reliability }) {
   return reliability === "confirmed" ? (
-    <Pill tone="green" title="Reported by the operator">
+    <Pill tone="neutral" className="bg-card ring-foreground/40" title="Reported by the operator">
       <CircleCheck /> Confirmed
     </Pill>
   ) : (
@@ -83,14 +83,14 @@ export function ReliabilityBadge({ reliability }: { reliability: Reliability }) 
   );
 }
 
+/** Monochrome on purpose: the fill count and the word carry the level, so "low" never reads as "late". */
 export function ConfidenceMeter({ confidence }: { confidence: Confidence }) {
   const filled = { high: 3, medium: 2, low: 1 }[confidence];
-  const color = { high: "bg-emerald-500", medium: "bg-amber-500", low: "bg-red-500" }[confidence];
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" title="How sure the estimate is">
       <span className="flex gap-0.5">
         {[0, 1, 2].map((i) => (
-          <span key={i} className={cn("h-2.5 w-1 rounded-full", i < filled ? color : "bg-border")} />
+          <span key={i} className={cn("h-2.5 w-1 rounded-full", i < filled ? "bg-foreground" : "bg-border")} />
         ))}
       </span>
       {confidence[0].toUpperCase() + confidence.slice(1)} confidence
