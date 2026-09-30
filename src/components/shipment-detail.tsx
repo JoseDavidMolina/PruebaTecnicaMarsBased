@@ -10,12 +10,13 @@ import { OPERATORS } from "@/domain/operators";
 import { hoursSinceUpdate, lastMilestone, unifiedTimeline } from "@/domain/timeline";
 import { DOCUMENT_LABELS, type Leg, type Milestone, type TrackedShipment } from "@/domain/types";
 import { DEMO_NOW, formatAgo, formatDateTime } from "@/lib/clock";
+import { etaText } from "@/lib/eta-display";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubmitButton } from "./client-controls";
 import { DeliveryMap } from "./delivery-map-loader";
 import {
-  ACTION_ICON, ActionControl, AiTag, ConfidenceMeter, DelayNote, etaText, MODE_ICON, ModeTrail, Pill, ReliabilityBadge, RiskBadge, StaleBadge, STATUS, StatusBadge,
+  ACTION_ICON, ActionControl, AiTag, ConfidenceMeter, DelayNote, MODE_ICON, ModeTrail, Pill, ReliabilityBadge, RiskBadge, StaleBadge, STATUS, StatusBadge,
 } from "./shipment-bits";
 
 type Variant = "ops" | "customer";

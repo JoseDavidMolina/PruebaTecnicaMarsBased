@@ -2,8 +2,8 @@ import { CircleCheck, CircleDashed, Clock, Mail, PhoneCall, Ship, Sparkles, Truc
 import { completeAction } from "@/app/actions";
 import { cn } from "@/lib/utils";
 import { SubmitButton } from "./client-controls";
-import { DEMO_NOW, formatDate, formatDateRange, formatDateTime, formatDuration, formatTime, isSameDay } from "@/lib/clock";
-import { isLate } from "@/ai/eta";
+import { DEMO_NOW, formatDuration, formatTime } from "@/lib/clock";
+import { delayNote, etaText, type DelayNote as DelayNoteData } from "@/lib/eta-display";
 import type { EtaPrediction, NextAction, RiskAssessment } from "@/ai/types";
 import type { Confidence, Leg, NormalizedStatus, Reliability } from "@/domain/types";
 
@@ -91,33 +91,20 @@ export const AiTag = ({ label = "AI" }: { label?: string }) => (
   </Pill>
 );
 
-const dayLabel = (iso: string) => (isSameDay(iso, DEMO_NOW) ? "Today" : formatDate(iso));
+const DELAY_NOTE_STYLE: Record<DelayNoteData["kind"], { className: string; title?: string }> = {
+  late: { className: "font-medium text-red-700" },
+  unconfirmed: { className: "font-medium text-amber-700", title: "No recent operator update, so we can't confirm it is on time" },
+  on_time: { className: "text-emerald-700" },
+};
 
-/** Human wording of an ETA: an exact moment, a delivery window, or an estimated range. */
-export function etaText(eta: EtaPrediction, delivered: boolean): { main: string; sub?: string } {
-  if (delivered) return { main: `Delivered ${formatDateTime(eta.expected)}` };
-  if (eta.reliability === "confirmed") {
-    return { main: `${dayLabel(eta.earliest)}, ${formatTime(eta.earliest)}–${formatTime(eta.latest)}` };
-  }
-  const range = formatDateRange(eta.earliest, eta.latest);
-  // A time of day is only as precise as the estimate: shown for a high-confidence estimate that is late by hours
-  // (the day alone can match the promised day), otherwise the day and its range.
-  const precise = eta.confidence === "high" && isLate(eta) && eta.delayHours < 24;
-  const main = precise ? `${dayLabel(eta.expected)}, ${formatTime(eta.expected)}` : dayLabel(eta.expected);
-  return { main, sub: range.includes("–") ? `Range ${range}` : undefined };
-}
-
-/** Stale data can show a delay, but never "On time": that would only echo the plan back. */
 export function DelayNote({ eta, stale = false }: { eta: EtaPrediction; stale?: boolean }) {
-  if (isLate(eta)) return <span className="text-xs font-medium text-red-700">{formatDuration(eta.delayHours)} late</span>;
-  if (stale) {
-    return (
-      <span className="text-xs font-medium text-amber-700" title="No recent operator update, so we can't confirm it is on time">
-        Unconfirmed
-      </span>
-    );
-  }
-  return <span className="text-xs text-emerald-700">On time</span>;
+  const note = delayNote(eta, stale);
+  const style = DELAY_NOTE_STYLE[note.kind];
+  return (
+    <span className={cn("text-xs", style.className)} title={style.title}>
+      {note.text}
+    </span>
+  );
 }
 
 export function EtaCell({ eta, delivered, stale }: { eta: EtaPrediction; delivered: boolean; stale?: boolean }) {

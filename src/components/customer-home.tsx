@@ -3,9 +3,10 @@ import { ai } from "@/ai";
 import { loadFacts, noticeForCustomer } from "@/app/demo";
 import { CUSTOMERS, customerOf, siteOf } from "@/data";
 import type { TrackedShipment, User } from "@/domain/types";
+import { etaText } from "@/lib/eta-display";
 import { Card, CardContent } from "@/components/ui/card";
 import { NoticeBanner } from "./shipment-detail";
-import { AiTag, ConfidenceMeter, DelayNote, etaText, ModeTrail, ReliabilityBadge, StatusBadge } from "./shipment-bits";
+import { AiTag, ConfidenceMeter, DelayNote, ModeTrail, ReliabilityBadge, StatusBadge } from "./shipment-bits";
 
 export async function CustomerHome({ user, shipments, done }: { user: Extract<User, { role: "customer" }>; shipments: TrackedShipment[]; done: string[] }) {
   const facts = await Promise.all(shipments.map(loadFacts));
