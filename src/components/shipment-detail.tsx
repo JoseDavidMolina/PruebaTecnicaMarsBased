@@ -98,7 +98,8 @@ function groupRepeats(items: Milestone[]): Milestone[][] {
   for (const m of items) {
     const group = groups.at(-1);
     const prev = group?.at(-1);
-    const repeat = prev && prev.legId === m.legId && prev.status === m.status && m.status !== "unknown" && prev.reliability === "confirmed" && m.reliability === "confirmed";
+    const confirmed = prev?.reliability === "confirmed" && m.reliability === "confirmed";
+    const repeat = prev && confirmed && prev.legId === m.legId && prev.status === m.status && m.status !== "unknown";
     if (repeat) group!.push(m);
     else groups.push([m]);
   }
@@ -287,7 +288,9 @@ function SimulateCard({ shipment, applied }: { shipment: TrackedShipment; applie
           <Radio className="size-3.5" /> Demo control
         </div>
         {applied ? (
-          <p className="text-sm text-muted-foreground">{operator} sent its update. ETA, risk and notices were recalculated. Use “Reset demo” in the header to replay it.</p>
+          <p className="text-sm text-muted-foreground">
+            {operator} sent its update. ETA, risk and notices were recalculated. Use “Reset demo” in the header to replay it.
+          </p>
         ) : (
           <form action={simulateUpdate} className="space-y-2">
             <p className="text-sm text-muted-foreground">Inject the next message from {operator}, as it would arrive from their feed.</p>
@@ -449,7 +452,11 @@ export async function OpsShipmentDetail({ facts, applied, done }: { facts: Shipm
                     <p className="mt-1 text-slate-700">{notice.body}</p>
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                    {notice.severity === "info" ? "Informational: shown to the customer automatically" : noticeSent ? "Sent · visible to the customer" : "Not visible to the customer yet"}
+                    {notice.severity === "info"
+                      ? "Informational: shown to the customer automatically"
+                      : noticeSent
+                        ? "Sent · visible to the customer"
+                        : "Not visible to the customer yet"}
                     {/* A warning can be sent from here too when the proposed action is something else (e.g. a customs hold). */}
                     {notice.severity === "warning" && !noticeSent && action.kind !== "notify_customer" && (
                       <ActionControl shipmentId={s.id} action={{ kind: "notify_customer", label: "Send notice", rationale: "" }} done={false} compact />
@@ -510,7 +517,11 @@ export function NoticeBanner({ notice, href }: { notice: { title: string; body: 
       className={cn("flex gap-3 rounded-xl border p-4", notice.severity === "warning" ? "border-amber-200 bg-amber-50" : "border-sky-200 bg-sky-50")}
       data-testid="customer-notice"
     >
-      {notice.severity === "warning" ? <TriangleAlert className="mt-0.5 size-5 shrink-0 text-amber-700" /> : <Sparkles className="mt-0.5 size-5 shrink-0 text-sky-700" />}
+      {notice.severity === "warning" ? (
+        <TriangleAlert className="mt-0.5 size-5 shrink-0 text-amber-700" />
+      ) : (
+        <Sparkles className="mt-0.5 size-5 shrink-0 text-sky-700" />
+      )}
       <div>
         <div className="font-medium">{notice.title}</div>
         <p className="text-sm text-slate-700">{notice.body}</p>

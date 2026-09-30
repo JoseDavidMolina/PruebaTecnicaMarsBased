@@ -20,7 +20,14 @@ const TONES: Record<Tone, string> = {
 
 export function Pill({ tone = "neutral", className, children, title }: { tone?: Tone; className?: string; children: React.ReactNode; title?: string }) {
   return (
-    <span title={title} className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset [&>svg]:size-3", TONES[tone], className)}>
+    <span
+      title={title}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset [&>svg]:size-3",
+        TONES[tone],
+        className,
+      )}
+    >
       {children}
     </span>
   );

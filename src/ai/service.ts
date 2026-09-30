@@ -166,7 +166,10 @@ export function customerNotice(s: TrackedShipment, eta: EtaPrediction, now: Date
   }
   if (isLate(eta)) {
     const portDelay = portDelayHours(s, now);
-    const cause = portDelay > 0 ? `The vessel is running ${formatDuration(portDelay)} behind schedule at the ${leg.to.name}.` : "It is taking longer than planned in transit.";
+    const cause =
+      portDelay > 0
+        ? `The vessel is running ${formatDuration(portDelay)} behind schedule at the ${leg.to.name}.`
+        : "It is taking longer than planned in transit.";
     return {
       severity: "warning",
       title: `Your shipment will arrive ${formatDuration(eta.delayHours)} later than planned`,
@@ -199,7 +202,10 @@ const STATUS_PHRASE: Record<NormalizedStatus, string> = {
 
 const etaSentence = ({ status, eta }: ShipmentFacts): string => {
   if (status === "delivered") return `Delivered on ${formatDateTime(eta.expected)} ${zoneName(eta.expected)}.`;
-  if (eta.reliability === "confirmed") return `The carrier confirmed delivery on ${formatDate(eta.earliest)}, ${formatTime(eta.earliest)}–${formatTime(eta.latest)} ${zoneName(eta.latest)}.`;
+  if (eta.reliability === "confirmed") {
+    const window = `${formatTime(eta.earliest)}–${formatTime(eta.latest)} ${zoneName(eta.latest)}`;
+    return `The carrier confirmed delivery on ${formatDate(eta.earliest)}, ${window}.`;
+  }
   const late = isLate(eta) ? `, ${formatDuration(eta.delayHours)} late` : "";
   return `Estimated delivery: ${formatDateRange(eta.earliest, eta.latest)} (${eta.confidence} confidence)${late}.`;
 };

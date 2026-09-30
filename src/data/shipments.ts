@@ -228,14 +228,22 @@ export const RAW_SHIPMENTS: Shipment[] = [
       { op: "transvolta", from: sitePlace("site-bcn"), to: PORTS.barcelona, dep: -150, arr: -146,
         events: [tv(10, -170, "El Prat"), tv(20, -150, "El Prat"), tv(60, -146, "Barcelona port")] },
       { op: "bluemeridian", from: PORTS.barcelona, to: PORTS.veracruz, dep: -120, arr: 150,
-        events: [bm("GIN", -144, "ESBCN"), bm("LOD", -124, "ESBCN", "MV Selene Crest"), bm("VDP", -120, "ESBCN", "MV Selene Crest", 150), bm("POS", -20, "MXVER", "MV Selene Crest", 146)] },
+        events: [
+          bm("GIN", -144, "ESBCN"),
+          bm("LOD", -124, "ESBCN", "MV Selene Crest"),
+          bm("VDP", -120, "ESBCN", "MV Selene Crest", 150),
+          bm("POS", -20, "MXVER", "MV Selene Crest", 146),
+        ] },
       { op: "tarnwick", from: PORTS.veracruz, to: customerPlace("cust-oskendra-mx"), dep: 160, arr: 200, events: [] },
     ],
   }),
   build({
     n: 1013, order: "PO-12201", site: "site-zgz", customer: "cust-oskendra-uk", promised: -140, docs: POD,
     legs: [{ op: "transvolta", from: sitePlace("site-zgz"), to: customerPlace("cust-oskendra-uk"), dep: -220, arr: -150,
-      events: [tv(10, -240, "Zaragoza"), tv(20, -220, "Zaragoza"), tv(30, -190, "Calais"), tv(40, -175, "Dover"), tv(45, -165, "Dover"), tv(50, -152, "Birmingham"), tv(60, -150, "Birmingham")] }],
+      events: [
+        tv(10, -240, "Zaragoza"), tv(20, -220, "Zaragoza"), tv(30, -190, "Calais"), tv(40, -175, "Dover"),
+        tv(45, -165, "Dover"), tv(50, -152, "Birmingham"), tv(60, -150, "Birmingham"),
+      ] }],
   }),
   build({
     n: 1014, order: "PO-12418", site: "site-brno", customer: "cust-solenne", promised: 30,

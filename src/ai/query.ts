@@ -76,7 +76,12 @@ const SITE_RULES: Rule<string>[] = SITES.map((s) => [word(s.name.split(" ")[0]),
 const CUSTOMER_RULES: Rule<string>[] = CUSTOMERS.map((c) => [word(c.name.split(" ")[0]), c.id, `Customer: ${c.name}`]);
 
 const STOPWORDS = new Set(
-  "a all an and any are arrive arrives arriving at about be by due find for from get going how in is it list me my of on or order orders please s show shipment shipments status that the there to what whats where which will with".split(" "),
+  [
+    "a all an and any are arrive arrives arriving at about be by due find for from get going how in is it",
+    "list me my of on or order orders please s show shipment shipments status that the there to what whats where which will with",
+  ]
+    .join(" ")
+    .split(" "),
 );
 
 // Calendar days and weeks (Monday to Monday) in the display zone, the same days the UI shows.

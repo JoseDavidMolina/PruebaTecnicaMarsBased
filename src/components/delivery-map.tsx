@@ -12,7 +12,10 @@ export default function DeliveryMap({ positions, destination, lastLabel }: { pos
 
   return (
     <MapContainer bounds={bounds} boundsOptions={{ padding: [24, 24] }} scrollWheelZoom={false} className="h-64 w-full rounded-lg">
-      <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
       <Polyline positions={route} pathOptions={{ color: "#7c3aed", weight: 4, opacity: 0.8 }} />
       <CircleMarker center={[destination.lat, destination.lng]} radius={7} pathOptions={{ color: "#0f172a", fillColor: "#fff", fillOpacity: 1, weight: 3 }}>
         <Tooltip>{destination.name}</Tooltip>

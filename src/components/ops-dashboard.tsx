@@ -18,6 +18,8 @@ export type DashboardParams = { q?: string; site?: string; op?: string; view?: s
 
 const EXAMPLES = ["shipments to France this week running late", "what's going on with order 12345?", "sea shipments delayed at port", "Alpenweg shipments from Brno"];
 
+const tabClass = (active: boolean) => cn("-mb-px pb-2", active ? "border-b-2 border-slate-900 font-medium" : "text-muted-foreground");
+
 const href = (params: DashboardParams) => {
   const qs = new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => Boolean(e[1])));
   return qs.size ? `/?${qs}` : "/";
@@ -112,7 +114,10 @@ export async function OpsDashboard({
                 defaultValue={params.q}
                 aria-label="Ask about your shipments"
                 placeholder="Ask about your shipments, e.g. “shipments to France this week running late”"
-                className="h-9 w-full rounded-md border border-input bg-background pr-3 pl-9 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-violet-300"
+                className={cn(
+                  "h-9 w-full rounded-md border border-input bg-background pr-3 pl-9 text-sm shadow-xs outline-none",
+                  "focus-visible:ring-[3px] focus-visible:ring-violet-300",
+                )}
               />
             </div>
             <AutoSubmitSelect name="site" defaultValue={params.site ?? ""} aria-label="Origin site">
@@ -141,7 +146,7 @@ export async function OpsDashboard({
                   Ignored: {query.unparsed.join(", ")}
                 </Pill>
               )}
-              <Link href={href({ site: params.site, op: params.op })} className="ml-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+              <Link href={scoped()} className="ml-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                 <X className="size-3" /> Clear
               </Link>
             </div>
@@ -178,7 +183,7 @@ export async function OpsDashboard({
             <span className="-mb-px border-b-2 border-slate-900 pb-2 font-medium">Search results ({rows.length})</span>
           ) : (
             <>
-              <Link href={href({ site: params.site, op: params.op })} className={cn("-mb-px pb-2", view === "attention" ? "border-b-2 border-slate-900 font-medium" : "text-muted-foreground")}>
+              <Link href={scoped()} className={tabClass(view === "attention")}>
                 Needs attention ({attention.length})
               </Link>
               {handledCount > 0 && (
@@ -186,7 +191,7 @@ export async function OpsDashboard({
                   {handledCount} handled today
                 </span>
               )}
-              <Link href={href({ site: params.site, op: params.op, view: "all" })} className={cn("-mb-px pb-2", view === "all" ? "border-b-2 border-slate-900 font-medium" : "text-muted-foreground")}>
+              <Link href={href({ site: params.site, op: params.op, view: "all" })} className={tabClass(view === "all")}>
                 All shipments ({filtered.length})
               </Link>
             </>
@@ -267,7 +272,11 @@ export async function OpsDashboard({
               {rows.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                    {view !== "attention" ? "No shipments match." : handledCount ? "Nothing left to act on: every shipment at risk has been handled." : "Nothing needs attention. Every shipment is on track."}
+                    {view !== "attention"
+                      ? "No shipments match."
+                      : handledCount
+                        ? "Nothing left to act on: every shipment at risk has been handled."
+                        : "Nothing needs attention. Every shipment is on track."}
                   </TableCell>
                 </TableRow>
               )}
