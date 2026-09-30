@@ -45,6 +45,7 @@ export function predictEta(s: TrackedShipment, now: Date = DEMO_NOW): EtaPredict
   const reasons: string[] = [];
   let hoursLeft: number;
   let uncertainty = LEG_UNCERTAINTY_HOURS[leg.mode];
+  let overdue = false;
 
   if (reported) {
     hoursLeft = hoursBetween(now, reported.latest);
@@ -55,10 +56,13 @@ export function predictEta(s: TrackedShipment, now: Date = DEMO_NOW): EtaPredict
     reasons.push(latePickup > 0 ? `Pickup is ${Math.round(latePickup)}h behind plan.` : "Based on planned transit times.");
   } else {
     const toPlan = hoursBetween(now, leg.plannedArrival);
-    hoursLeft = toPlan > 0 ? toPlan : duration(leg) * 0.25;
+    // Past its plan with no revised ETA from the operator: we know least here, so the range widens by the overdue hours.
+    overdue = toPlan <= 0;
+    hoursLeft = overdue ? duration(leg) * 0.25 : toPlan;
+    if (overdue) uncertainty += -toPlan;
     reasons.push(
-      toPlan <= 0
-        ? `Was due at ${leg.to.name} on ${formatDate(leg.plannedArrival)} and is still in transit.`
+      overdue
+        ? `The leg to ${leg.to.name} was due on ${formatDate(leg.plannedArrival)}, ${formatDuration(-toPlan)} ago, and ${operator} has given no revised ETA.`
         : isStale(s, now)
           ? `Planned to reach ${leg.to.name} on ${formatDate(leg.plannedArrival)}.` // no fresh data to say it is on track
           : "In transit, on track against planned transit time.",
@@ -95,7 +99,7 @@ export function predictEta(s: TrackedShipment, now: Date = DEMO_NOW): EtaPredict
 
   hoursLeft = Math.max(1, hoursLeft);
   const expected = addHours(now, hoursLeft);
-  const confidence: Confidence = stale || uncertainty > 48 ? "low" : uncertainty > 12 || unread ? "medium" : "high";
+  const confidence: Confidence = stale || uncertainty > 48 ? "low" : uncertainty > 12 || unread || overdue ? "medium" : "high";
 
   return {
     expected,

@@ -100,8 +100,10 @@ export function etaText(eta: EtaPrediction, delivered: boolean): { main: string;
     return { main: `${dayLabel(eta.earliest)}, ${formatTime(eta.earliest)}–${formatTime(eta.latest)}` };
   }
   const range = formatDateRange(eta.earliest, eta.latest);
-  // Late by hours: the day alone can match the promised day ("9 Oct · 12 hours late"), so show the time too.
-  const main = isLate(eta) && eta.delayHours < 24 ? `${dayLabel(eta.expected)}, ${formatTime(eta.expected)}` : dayLabel(eta.expected);
+  // A time of day is only as precise as the estimate: shown for a high-confidence estimate that is late by hours
+  // (the day alone can match the promised day), otherwise the day and its range.
+  const precise = eta.confidence === "high" && isLate(eta) && eta.delayHours < 24;
+  const main = precise ? `${dayLabel(eta.expected)}, ${formatTime(eta.expected)}` : dayLabel(eta.expected);
   return { main, sub: range.includes("–") ? `Range ${range}` : undefined };
 }
 

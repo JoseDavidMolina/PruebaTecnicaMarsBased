@@ -51,6 +51,17 @@ describe("predictEta", () => {
     }
   });
 
+  it("never gives high confidence for an overdue leg without a revised operator ETA", () => {
+    const e = eta("shp-1016"); // due in Munich 2h ago, Transvolta sent no new ETA
+    expect(e.reliability).toBe("estimated");
+    expect(e.confidence).toBe("medium");
+    expect(e.explanation).toMatch(/was due on 7 Oct, 2 hours ago, and Transvolta Road Freight has given no revised ETA/);
+  });
+
+  it("does not describe a shipment held at customs as in transit", () => {
+    expect(eta("shp-1001").explanation).not.toMatch(/in transit/i);
+  });
+
   it("is on time for a normal road shipment", () => {
     expect(isLate(eta("shp-1006"))).toBe(false);
     expect(eta("shp-1006").confidence).toBe("high");
