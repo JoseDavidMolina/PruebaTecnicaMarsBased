@@ -34,15 +34,13 @@ export async function OpsDashboard({
   params: DashboardParams;
   done: string[];
 }) {
-  const [facts, summary, query] = await Promise.all([
-    Promise.all(shipments.map(loadFacts)),
-    ai.summarizeDay(shipments),
-    params.q ? ai.parseQuery(params.q) : null,
-  ]);
+  const [facts, query] = await Promise.all([Promise.all(shipments.map(loadFacts)), params.q ? ai.parseQuery(params.q) : null]);
 
   const filtered = facts
     .filter((f) => !params.site || f.shipment.originSiteId === params.site)
     .filter((f) => !params.op || f.shipment.legs.some((l) => l.operatorId === params.op));
+  // The briefing describes what the filters show, so its counts match the queue and the KPI drill-downs.
+  const summary = await ai.summarizeDay(filtered.map((f) => f.shipment));
   const actions = new Map(await Promise.all(filtered.map(async (f) => [f.shipment.id, await ai.suggestNextAction(f.shipment, f.risk)] as const)));
   const handled = (f: ShipmentFacts) => done.includes(doneKey(f.shipment.id, actions.get(f.shipment.id)!.kind));
   // Managing by exception: once ops has acted on the proposed action, the shipment leaves the queue until something new happens.
@@ -58,15 +56,18 @@ export async function OpsDashboard({
 
   const sites = SITES.filter((s) => user.siteIds.includes(s.id));
   const operatorIds = [...new Set(shipments.flatMap((s) => s.legs.map((l) => l.operatorId)))] as OperatorId[];
+  const scope = [sites.find((s) => s.id === params.site)?.name, OPERATORS[params.op as OperatorId]?.name].filter(Boolean);
   const c = summary.counts;
+  // Every KPI keeps the current filters, so its drill-down shows the same number.
+  const scoped = (q?: string) => href({ q, site: params.site, op: params.op });
   const kpis = [
-    { label: "At risk", value: c.atRisk, href: href({ site: params.site, op: params.op }), tone: "text-red-700" },
-    { label: "Held at customs", value: c.customsHold, href: href({ q: "held at customs" }) },
-    { label: "Delayed at port", value: c.portDelay, href: href({ q: "delayed at port" }) },
-    { label: "No recent update", value: c.stale, href: href({ q: "stale" }) },
-    { label: "Incidents", value: c.exceptions, href: href({ q: "incident" }) },
-    { label: "Out for delivery", value: c.outForDelivery, href: href({ q: "out for delivery" }) },
-    { label: "Delivered today", value: c.deliveredToday, href: href({ q: "delivered today" }) },
+    { label: "At risk", value: c.atRisk, href: scoped(), tone: "text-red-700" },
+    { label: "Held at customs", value: c.customsHold, href: scoped("held at customs") },
+    { label: "Delayed at port", value: c.portDelay, href: scoped("delayed at port") },
+    { label: "No recent update", value: c.stale, href: scoped("stale") },
+    { label: "Incidents", value: c.exceptions, href: scoped("incident") },
+    { label: "Out for delivery", value: c.outForDelivery, href: scoped("out for delivery") },
+    { label: "Delivered today", value: c.deliveredToday, href: scoped("delivered today") },
   ];
 
   return (
@@ -82,6 +83,7 @@ export async function OpsDashboard({
         <CardContent className="space-y-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <AiTag label="Daily briefing" /> generated at {formatTime(DEMO_NOW.toISOString())} from the latest operator updates
+            {scope.length > 0 && <span className="font-medium text-foreground">· {scope.join(" · ")} only</span>}
           </div>
           <p className="text-lg leading-snug font-medium text-balance" data-testid="daily-summary">
             {summary.headline}

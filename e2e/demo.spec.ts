@@ -41,6 +41,16 @@ test("operations: briefing, search, and an operator update that recalculates the
   await expect(page.getByTestId("row-shp-1002")).toHaveCount(0);
 });
 
+test("the briefing and its KPIs describe what the filters show", async ({ page }) => {
+  await page.goto("/?site=site-brno");
+  await expect(page.getByTestId("daily-summary")).toHaveText("Today: 1 at risk (1 with no recent update), 0 out for delivery, 0 delivered.");
+  await expect(page.getByText("· Brno Plant only")).toBeVisible();
+  // The KPI keeps the filter, so its drill-down shows the same count.
+  await page.getByRole("link", { name: "1 No recent update" }).click();
+  await expect(page).toHaveURL(/q=stale&site=site-brno/);
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+});
+
 test("a drafted warning reaches the customer only once ops sends it", async ({ page }) => {
   // Waits for the greeting, so the switch has landed before navigating on.
   const viewAs = async (userId: string, greeting: string) => {
