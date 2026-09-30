@@ -16,7 +16,7 @@ const onTime: EtaPrediction = { ...late, delayHours: 0 };
 
 describe("etaText", () => {
   it("shows a time of day only for a high-confidence estimate", () => {
-    expect(etaText(late, false).main).toBe("Today, 19:30");
+    expect(etaText(late, false).main).toBe("Today, 19:30 CEST");
     expect(etaText({ ...late, confidence: "medium" }, false)).toEqual({ main: "Today", sub: "Range 7 Oct – 8 Oct" });
   });
 
@@ -32,11 +32,11 @@ describe("etaText", () => {
 
   it("always shows the window the operator confirmed", () => {
     const window = { ...late, reliability: "confirmed" as const, earliest: "2026-10-07T07:00:00.000Z", latest: "2026-10-07T09:00:00.000Z" };
-    expect(etaText(window, false).main).toBe("Today, 09:00–11:00");
+    expect(etaText(window, false).main).toBe("Today, 09:00–11:00 CEST");
   });
 
   it("says when it was delivered, whatever the estimate said", () => {
-    expect(etaText(late, true)).toEqual({ main: "Delivered 7 Oct, 19:30" });
+    expect(etaText(late, true)).toEqual({ main: "Delivered 7 Oct, 19:30 CEST" });
   });
 });
 

@@ -1,4 +1,4 @@
-import { addHours, DEMO_NOW, formatDate, formatDuration, formatTime, hoursBetween } from "@/lib/clock";
+import { addHours, DEMO_NOW, formatDate, formatDuration, formatTime, hoursBetween, zoneName } from "@/lib/clock";
 import { OPERATORS } from "@/domain/operators";
 import { activeLeg, currentStatus, hoursSinceUpdate, isStale, lastMilestone, reportedEta } from "@/domain/timeline";
 import type { Confidence, Leg, Mode, TrackedShipment } from "@/domain/types";
@@ -37,7 +37,7 @@ export function predictEta(s: TrackedShipment, now: Date = DEMO_NOW): EtaPredict
     return {
       expected, earliest: reported.earliest, latest: reported.latest,
       reliability: "confirmed", confidence: "high", delayHours: delayHours(expected),
-      explanation: `${operator} confirmed a delivery window of ${formatTime(reported.earliest)}–${formatTime(reported.latest)}.`,
+      explanation: `${operator} confirmed a delivery window of ${formatTime(reported.earliest)}–${formatTime(reported.latest)} ${zoneName(reported.latest)}.`,
     };
   }
 

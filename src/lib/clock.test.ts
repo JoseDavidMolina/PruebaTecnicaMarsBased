@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatAgo, formatDuration } from "./clock";
+import { formatAgo, formatDuration, zoneName } from "./clock";
 
 describe("formatDuration", () => {
   it("rounds delays to whole hours under a day, then to days, and never says 0", () => {
@@ -10,6 +10,13 @@ describe("formatDuration", () => {
     expect(formatDuration(24)).toBe("1 day");
     expect(formatDuration(47)).toBe("2 days");
     expect(formatDuration(-7)).toBe("7 hours");
+  });
+});
+
+describe("zoneName", () => {
+  it("names the Madrid zone of that instant, summer or winter time", () => {
+    expect(zoneName("2026-10-07T07:00:00Z")).toBe("CEST");
+    expect(zoneName("2026-10-26T07:00:00Z")).toBe("CET"); // clocks went back on 25 Oct
   });
 });
 

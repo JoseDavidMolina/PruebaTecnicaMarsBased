@@ -1,4 +1,4 @@
-import { DEMO_NOW, formatDate, formatDateRange, formatDateTime, formatDuration, formatTime, startOfDay } from "@/lib/clock";
+import { DEMO_NOW, formatDate, formatDateRange, formatDateTime, formatDuration, formatTime, startOfDay, zoneName } from "@/lib/clock";
 import { OPERATORS } from "@/domain/operators";
 import { activeLeg, currentStatus, hoursSinceUpdate, isStale, lastMilestone } from "@/domain/timeline";
 import { DOCUMENT_LABELS, type Milestone, type NormalizedStatus, type TrackedShipment } from "@/domain/types";
@@ -176,7 +176,7 @@ export function customerNotice(s: TrackedShipment, eta: EtaPrediction, now: Date
   if (status === "out_for_delivery" && eta.reliability === "confirmed") {
     return {
       severity: "info",
-      title: `Arriving today, ${formatTime(eta.earliest)}–${formatTime(eta.latest)}`,
+      title: `Arriving today, ${formatTime(eta.earliest)}–${formatTime(eta.latest)} ${zoneName(eta.latest)}`,
       body: "Your shipment is out for delivery. The carrier confirmed this delivery window.",
     };
   }
@@ -198,8 +198,8 @@ const STATUS_PHRASE: Record<NormalizedStatus, string> = {
 };
 
 const etaSentence = ({ status, eta }: ShipmentFacts): string => {
-  if (status === "delivered") return `Delivered on ${formatDateTime(eta.expected)}.`;
-  if (eta.reliability === "confirmed") return `The carrier confirmed delivery on ${formatDate(eta.earliest)}, ${formatTime(eta.earliest)}–${formatTime(eta.latest)}.`;
+  if (status === "delivered") return `Delivered on ${formatDateTime(eta.expected)} ${zoneName(eta.expected)}.`;
+  if (eta.reliability === "confirmed") return `The carrier confirmed delivery on ${formatDate(eta.earliest)}, ${formatTime(eta.earliest)}–${formatTime(eta.latest)} ${zoneName(eta.latest)}.`;
   const late = isLate(eta) ? `, ${formatDuration(eta.delayHours)} late` : "";
   return `Estimated delivery: ${formatDateRange(eta.earliest, eta.latest)} (${eta.confidence} confidence)${late}.`;
 };
@@ -218,7 +218,7 @@ export function answerQuery(query: ShipmentQuery, matches: ShipmentFacts[]): Que
     const action = suggestNextAction(s, f.risk);
     const text = [
       `${s.reference} (order ${s.orderRef}, ${customerOf(s).name}) is ${STATUS_PHRASE[f.status]}.`,
-      last && `Last update from ${OPERATORS[last.operatorId].name}: ${formatDateTime(last.at)}${last.location ? ` in ${last.location}` : ""}.`,
+      last && `Last update from ${OPERATORS[last.operatorId].name}: ${formatDateTime(last.at)} ${zoneName(last.at)}${last.location ? ` in ${last.location}` : ""}.`,
       ...f.risk.reasons.filter((r) => !r.startsWith("ETA is") && !r.startsWith("Low confidence")), // the ETA sentence covers these
       etaSentence(f),
       action.kind !== "none" && `Suggested next step: ${action.label}.`,

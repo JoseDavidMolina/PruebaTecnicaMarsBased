@@ -9,7 +9,7 @@ import { customerOf, SIMULATED_UPDATES, siteOf } from "@/data";
 import { OPERATORS } from "@/domain/operators";
 import { hoursSinceUpdate, lastMilestone, unifiedTimeline } from "@/domain/timeline";
 import { DOCUMENT_LABELS, type Leg, type Milestone, type TrackedShipment } from "@/domain/types";
-import { DEMO_NOW, formatAgo, formatDateTime } from "@/lib/clock";
+import { DEMO_NOW, formatAgo, formatDateTime, zoneName } from "@/lib/clock";
 import { etaText } from "@/lib/eta-display";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -202,6 +202,9 @@ function FragmentWithLeg({ leg, variant, children }: { leg?: Leg; variant: Varia
   );
 }
 
+/** Timeline rows show many times; one note labels them all instead of a zone on every row. */
+const TimesNote = () => <>All times are Madrid time ({zoneName()}).</>;
+
 // --- Cards --------------------------------------------------------------------
 
 export function EtaCard({ facts, variant }: { facts: ShipmentFacts; variant: Variant }) {
@@ -224,7 +227,7 @@ export function EtaCard({ facts, variant }: { facts: ShipmentFacts; variant: Var
           <ReliabilityBadge reliability={eta.reliability} />
           {eta.reliability === "estimated" && <ConfidenceMeter confidence={eta.confidence} />}
           {!delivered && <DelayNote eta={eta} stale={facts.stale} />}
-          <span className="text-xs text-muted-foreground">Promised {formatDateTime(shipment.promisedDelivery)}</span>
+          <span className="text-xs text-muted-foreground">Promised {formatDateTime(shipment.promisedDelivery)} {zoneName(shipment.promisedDelivery)}</span>
         </div>
         {variant === "ops" && (
           <p className="flex gap-2 rounded-md bg-slate-50 p-3 text-sm text-slate-700">
@@ -298,7 +301,7 @@ function MapCard({ shipment }: { shipment: TrackedShipment }) {
       </CardHeader>
       <CardContent>
         <DeliveryMap positions={shipment.positions!} destination={customerOf(shipment).place} />
-        <p className="mt-2 text-xs text-muted-foreground">Last driver position {formatDateTime(shipment.positions!.at(-1)!.at)}. Shown only while out for delivery.</p>
+        <p className="mt-2 text-xs text-muted-foreground">Last driver position {formatDateTime(shipment.positions!.at(-1)!.at)} {zoneName(shipment.positions!.at(-1)!.at)}. Shown only while out for delivery.</p>
       </CardContent>
     </Card>
   );
@@ -328,7 +331,7 @@ function Header({ facts, variant }: { facts: ShipmentFacts; variant: Variant }) 
       </p>
       {/* Freshness is always visible: how old is what we are showing? */}
       <p className="text-xs text-muted-foreground" data-testid="freshness">
-        {last ? `Last ${source}: ${formatDateTime(last.at)} (${formatAgo(hoursSinceUpdate(s) ?? 0)})` : "No update from the carrier yet"}
+        {last ? `Last ${source}: ${formatDateTime(last.at)} ${zoneName(last.at)} (${formatAgo(hoursSinceUpdate(s) ?? 0)})` : "No update from the carrier yet"}
       </p>
     </div>
   );
@@ -357,6 +360,8 @@ export async function OpsShipmentDetail({ facts, applied, done }: { facts: Shipm
               <CardTitle>Unified timeline</CardTitle>
               <p className="text-xs text-muted-foreground">
                 {new Set(s.legs.map((l) => l.operatorId)).size} operator feed(s) merged. Grey tags show the raw operator status behind each normalized step.
+                {" "}
+                <TimesNote />
               </p>
             </CardHeader>
             <CardContent>
@@ -464,6 +469,9 @@ export async function CustomerShipmentDetail({ facts, applied, done }: { facts: 
           <Card>
             <CardHeader>
               <CardTitle>Journey</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                <TimesNote />
+              </p>
             </CardHeader>
             <CardContent>
               <Timeline shipment={s} eta={facts.eta} variant="customer" />

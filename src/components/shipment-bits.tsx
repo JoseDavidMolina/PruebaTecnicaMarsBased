@@ -2,7 +2,7 @@ import { CircleCheck, CircleDashed, Clock, Mail, PhoneCall, Ship, Sparkles, Truc
 import { completeAction } from "@/app/actions";
 import { cn } from "@/lib/utils";
 import { SubmitButton } from "./client-controls";
-import { DEMO_NOW, formatDuration, formatTime } from "@/lib/clock";
+import { DEMO_NOW, formatDuration, formatTime, zoneName } from "@/lib/clock";
 import { delayNote, etaText, type DelayNote as DelayNoteData } from "@/lib/eta-display";
 import type { EtaPrediction, NextAction, RiskAssessment } from "@/ai/types";
 import type { Confidence, Leg, NormalizedStatus, Reliability } from "@/domain/types";
@@ -154,7 +154,7 @@ export function ActionControl({ shipmentId, action, done, compact = false }: { s
   if (done) {
     return (
       <Pill tone="green" title="Demo: recorded here, nothing is sent outside the app">
-        <CircleCheck /> {b.done} · {formatTime(DEMO_NOW.toISOString())}
+        <CircleCheck /> {b.done} · {formatTime(DEMO_NOW.toISOString())} {zoneName()}
       </Pill>
     );
   }

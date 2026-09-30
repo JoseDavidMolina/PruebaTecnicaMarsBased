@@ -20,7 +20,7 @@ pnpm dev            # http://localhost:3000
 | `pnpm lint` / `pnpm typecheck` | ESLint / TypeScript (strict) |
 | `pnpm build` | Production build |
 
-The app runs on a fixed demo clock (**Wed 7 Oct 2026, 09:00 Madrid**), so every run looks the same.
+The app runs on a fixed demo clock (**Wed 7 Oct 2026, 09:00 Madrid**), so every run looks the same. Every time is shown in Madrid time and labelled with its zone (*09:00 CEST*), whoever is viewing.
 
 ## Five-minute demo
 
@@ -33,7 +33,7 @@ The app runs on a fixed demo clock (**Wed 7 Oct 2026, 09:00 Madrid**), so every 
    - SHP-1003: stale, no update for 4 days → *contact operator*. It is shown as "Unconfirmed", never "On time".
    - SHP-1016: its leg is 2 hours overdue and the operator gave no revised ETA, so the estimate is a day with a range at *medium* confidence, not a time of day.
    - SHP-1014: undocumented operator code, shown as "Unrecognised update" instead of being guessed. The AI suggests a likely meaning (*Umladung* = transshipment) without applying it, the ETA drops to medium confidence and ops is asked to check it with the operator.
-6. **Switch "Viewing as" to Claire (Solenne Équipements).** She sees only her own shipments, proactive notices, and the delivery window exactly as the courier sent it (*Today, 09:00–11:00 · Confirmed*) with a live map for the parcel out for delivery. Switch to Diego (Oskendra México): the port-delay warning for PO-12402 appears only after ops has sent it.
+6. **Switch "Viewing as" to Claire (Solenne Équipements).** She sees only her own shipments, proactive notices, and the delivery window exactly as the courier sent it (*Today, 09:00–11:00 CEST · Confirmed*) with a live map for the parcel out for delivery. Switch to Diego (Oskendra México): the port-delay warning for PO-12402 appears only after ops has sent it.
 7. **Switch to Tomáš (Brno).** Same dashboard, limited to one site's perimeter.
 
 ## How it is built

@@ -69,7 +69,7 @@ describe("customerNotice", () => {
   });
 
   it("confirms the delivery window, and stays quiet when there is nothing to say", () => {
-    expect(notice("shp-1004")?.title).toBe("Arriving today, 09:00–11:00"); // exactly the window Tarnwick sent
+    expect(notice("shp-1004")?.title).toBe("Arriving today, 09:00–11:00 CEST"); // exactly the window Tarnwick sent
     expect(notice("shp-1006")).toBeNull();
     expect(notice("shp-1005")).toBeNull();
   });

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { Package, RotateCcw } from "lucide-react";
-import { DEMO_NOW, formatDateTime } from "@/lib/clock";
+import { DEMO_NOW, formatDateTime, zoneName } from "@/lib/clock";
 import { USERS } from "@/data";
 import { AutoSubmitSelect, LiveRefresh, SubmitButton } from "@/components/client-controls";
 import { resetDemo, switchUser } from "./actions";
@@ -33,8 +33,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               </span>
               Oskendra <span className="font-normal text-muted-foreground">Shipment Tracker</span>
             </Link>
-            <span className="text-xs text-muted-foreground" title="Fixed clock so the demo is identical on every run">
-              Demo clock · {formatDateTime(DEMO_NOW.toISOString())}
+            <span className="text-xs text-muted-foreground" title="Fixed clock so the demo is identical on every run. All times are Madrid time.">
+              Demo clock · {formatDateTime(DEMO_NOW.toISOString())} {zoneName()}
             </span>
             {/* Off in e2e runs (playwright.config.ts) so a refresh never lands mid-assertion. */}
             {user.role === "ops" && process.env.LIVE_REFRESH !== "off" && <LiveRefresh seconds={60} />}

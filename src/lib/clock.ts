@@ -18,6 +18,15 @@ export const formatDate = (iso: string): string =>
 export const formatTime = (iso: string): string =>
   new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: DISPLAY_TZ }).format(new Date(iso));
 
+/**
+ * Short name of the display zone at an instant: "CEST", or "CET" in winter. Every time of day shown carries it,
+ * so nobody reads Madrid time as their own.
+ */
+export const zoneName = (iso: string | Date = DEMO_NOW): string =>
+  new Intl.DateTimeFormat("en-GB", { timeZone: DISPLAY_TZ, timeZoneName: "short" })
+    .formatToParts(new Date(iso))
+    .find((p) => p.type === "timeZoneName")!.value;
+
 export const formatDateRange = (from: string, to: string): string => {
   const [a, b] = [formatDate(from), formatDate(to)];
   return a === b ? a : `${a} – ${b}`;

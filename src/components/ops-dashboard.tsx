@@ -7,7 +7,7 @@ import { customerOf, SITES, siteOf } from "@/data";
 import { OPERATORS } from "@/domain/operators";
 import { hoursSinceUpdate } from "@/domain/timeline";
 import type { OperatorId, TrackedShipment, User } from "@/domain/types";
-import { DEMO_NOW, formatLongDate, formatTime } from "@/lib/clock";
+import { DEMO_NOW, formatLongDate, formatTime, zoneName } from "@/lib/clock";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -85,7 +85,7 @@ export async function OpsDashboard({
       <Card className="border-violet-200 bg-gradient-to-br from-violet-50/80 to-white ring-violet-200">
         <CardContent className="space-y-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <AiTag label="Daily briefing" /> generated at {formatTime(DEMO_NOW.toISOString())} from the latest operator updates
+            <AiTag label="Daily briefing" /> generated at {formatTime(DEMO_NOW.toISOString())} {zoneName()} from the latest operator updates
             {scope.length > 0 && <span className="font-medium text-foreground">· {scope.join(" · ")} only</span>}
           </div>
           <p className="text-lg leading-snug font-medium text-balance" data-testid="daily-summary">
