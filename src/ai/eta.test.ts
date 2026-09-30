@@ -18,9 +18,9 @@ describe("predictEta", () => {
   it("uses the courier's delivery window as a confirmed ETA", () => {
     expect(eta("shp-1004")).toMatchObject({
       reliability: "confirmed",
-      earliest: "2026-10-07T09:00:00.000Z",
-      latest: "2026-10-07T11:00:00.000Z",
-      expected: "2026-10-07T10:00:00.000Z",
+      earliest: "2026-10-07T07:00:00.000Z", // 09:00-11:00 Paris time, as Kestrel sent it
+      latest: "2026-10-07T09:00:00.000Z",
+      expected: "2026-10-07T08:00:00.000Z",
     });
   });
 
@@ -60,5 +60,8 @@ describe("predictEta", () => {
     // The vessel berths and the carrier moves discharge to +12h.
     expect(predictEta(withUpdate("shp-1002")).delayHours).toBe(12);
     expect(predictEta(withUpdate("shp-1004"))).toMatchObject({ reliability: "confirmed", expected: DEMO_NOW.toISOString() });
+    // The simulated delivery lands inside the window the courier confirmed.
+    const window = eta("shp-1004");
+    expect(DEMO_NOW.toISOString() >= window.earliest && DEMO_NOW.toISOString() <= window.latest).toBe(true);
   });
 });

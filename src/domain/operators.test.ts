@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { formatTime } from "@/lib/clock";
 import { normalizeEvent } from "./operators";
 import type { OperatorId } from "./types";
 
@@ -15,7 +16,7 @@ describe("normalizeEvent", () => {
     });
   });
 
-  it("parses Kestrel free text and its delivery window", () => {
+  it("parses Kestrel free text and its delivery window in Paris local time", () => {
     const m = ev("kestrel", {
       status: "Out for delivery - driver assigned",
       time: "07/10/2026 05:10",
@@ -23,8 +24,22 @@ describe("normalizeEvent", () => {
       window: "09:00-11:00",
     });
     expect(m?.status).toBe("out_for_delivery");
-    expect(m?.at).toBe("2026-10-07T05:10:00.000Z");
-    expect(m?.eta).toEqual({ earliest: "2026-10-07T09:00:00.000Z", latest: "2026-10-07T11:00:00.000Z" });
+    expect(m?.at).toBe("2026-10-07T03:10:00.000Z"); // CEST, UTC+2
+    expect(m?.eta).toEqual({ earliest: "2026-10-07T07:00:00.000Z", latest: "2026-10-07T09:00:00.000Z" });
+  });
+
+  it("displays a Kestrel delivery window exactly as the operator wrote it", () => {
+    const m = ev("kestrel", { status: "Out for delivery", time: "07/10/2026 05:10", city: "Lyon", window: "09:00-11:00" });
+    expect([formatTime(m!.eta!.earliest), formatTime(m!.eta!.latest)]).toEqual(["09:00", "11:00"]);
+  });
+
+  it("reads local times on both sides of the October DST switch", () => {
+    const at = (time: string) => ev("kestrel", { status: "Sorting completed", time, city: "Lyon" })?.at;
+    expect(at("24/10/2026 10:00")).toBe("2026-10-24T08:00:00.000Z"); // CEST, UTC+2
+    expect(at("25/10/2026 01:30")).toBe("2026-10-24T23:30:00.000Z"); // before 03:00 CEST becomes 02:00 CET
+    expect(at("25/10/2026 03:30")).toBe("2026-10-25T02:30:00.000Z"); // CET, UTC+1
+    expect(at("26/10/2026 10:00")).toBe("2026-10-26T09:00:00.000Z");
+    expect(ev("alpenweg", { st: "UNT", datum: "202610251200", ort: "Linz" })?.at).toBe("2026-10-25T11:00:00.000Z");
   });
 
   it("checks Kestrel exceptions before deliveries", () => {
@@ -47,11 +62,11 @@ describe("normalizeEvent", () => {
     expect(m?.eta?.latest).toBe("2026-10-09T18:00:00.000Z");
   });
 
-  it("maps Alpenweg short codes with compact dates", () => {
+  it("maps Alpenweg short codes with compact dates in Vienna local time", () => {
     expect(ev("alpenweg", { st: "UNT", datum: "202610031400", ort: "Linz", txt: "Unterwegs" })).toMatchObject({
       status: "in_transit",
       rawStatus: "UNT (Unterwegs)",
-      at: "2026-10-03T14:00:00.000Z",
+      at: "2026-10-03T12:00:00.000Z",
     });
   });
 

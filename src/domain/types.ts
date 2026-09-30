@@ -25,6 +25,7 @@ export type Operator = {
   name: string;
   mode: Mode;
   format: "numeric" | "free-text" | "port-event" | "short-code";
+  timeZone?: string; // IANA zone of the feed's local timestamps, for formats that carry no offset
 };
 
 export type User =

@@ -1,11 +1,12 @@
 import { z } from "zod";
+import { fromZoned } from "@/lib/clock";
 import type { EtaWindow, NormalizedStatus, Operator, OperatorId, RawEvent } from "./types";
 
 export const OPERATORS: Record<OperatorId, Operator> = {
   transvolta: { id: "transvolta", name: "Transvolta Road Freight", mode: "road", format: "numeric" },
-  kestrel: { id: "kestrel", name: "Kestrel Express", mode: "road", format: "free-text" },
+  kestrel: { id: "kestrel", name: "Kestrel Express", mode: "road", format: "free-text", timeZone: "Europe/Paris" },
   bluemeridian: { id: "bluemeridian", name: "Blue Meridian Lines", mode: "sea", format: "port-event" },
-  alpenweg: { id: "alpenweg", name: "Alpenweg Logistik", mode: "road", format: "short-code" },
+  alpenweg: { id: "alpenweg", name: "Alpenweg Logistik", mode: "road", format: "short-code", timeZone: "Europe/Vienna" },
 };
 
 export const PORT_NAMES: Record<string, string> = {
@@ -68,7 +69,8 @@ export const ALPENWEG_CODES: Record<string, NormalizedStatus> = {
 
 // --- Raw payload schemas (trust boundary) -------------------------------------
 
-// ponytail: operators with local-time formats are treated as UTC; add per-operator time zones for real feeds.
+// Kestrel and Alpenweg send local wall-clock times without an offset: read them in the operator's time zone.
+// ponytail: one zone per operator; a feed spanning several zones would need the zone of each depot.
 const dmyHm = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
 const compact = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/;
 
@@ -99,14 +101,14 @@ type Parsed = {
   eta?: EtaWindow;
 };
 
-const fromDmy = (s: string): string => {
-  const [, d, m, y, hh, mm] = dmyHm.exec(s)!;
-  return new Date(`${y}-${m}-${d}T${hh}:${mm}:00Z`).toISOString();
+const fromDmy = (s: string, timeZone: string) => {
+  const [, d, m, y, hh, mm] = dmyHm.exec(s)!.map(Number);
+  return { y, m, d, at: fromZoned({ y, m, d, hh, mm }, timeZone) };
 };
 
-const fromCompact = (s: string): string => {
-  const [, y, m, d, hh, mm] = compact.exec(s)!;
-  return new Date(`${y}-${m}-${d}T${hh}:${mm}:00Z`).toISOString();
+const fromCompact = (s: string, timeZone: string): string => {
+  const [, y, m, d, hh, mm] = compact.exec(s)!.map(Number);
+  return fromZoned({ y, m, d, hh, mm }, timeZone);
 };
 
 const iso = (s: string) => new Date(s).toISOString();
@@ -128,15 +130,19 @@ const parsers: Record<OperatorId, (payload: unknown) => Parsed | null> = {
     const r = kestrelSchema.safeParse(payload);
     if (!r.success) return null;
     const { status, time, city, window } = r.data;
-    const at = fromDmy(time);
-    const day = at.slice(0, 10);
-    const [from, to] = window?.split("-") ?? [];
+    const tz = OPERATORS.kestrel.timeZone!;
+    const { y, m, d, at } = fromDmy(time, tz);
+    // The window is local time on the same local day as `time`.
+    const [from, to] = (window?.split("-") ?? []).map((hm) => {
+      const [hh, mm] = hm.split(":").map(Number);
+      return fromZoned({ y, m, d, hh, mm }, tz);
+    });
     return {
       rawStatus: status,
       status: KESTREL_RULES.find(([re]) => re.test(status))?.[1] ?? "unknown",
       at,
       location: city,
-      eta: from && to ? { earliest: iso(`${day}T${from}:00Z`), latest: iso(`${day}T${to}:00Z`) } : undefined,
+      eta: from && to ? { earliest: from, latest: to } : undefined,
     };
   },
   bluemeridian(payload) {
@@ -160,7 +166,7 @@ const parsers: Record<OperatorId, (payload: unknown) => Parsed | null> = {
       rawCode: st,
       rawStatus: txt ? `${st} (${txt})` : st,
       status: ALPENWEG_CODES[st] ?? "unknown",
-      at: fromCompact(datum),
+      at: fromCompact(datum, OPERATORS.alpenweg.timeZone!),
       location: ort,
     };
   },

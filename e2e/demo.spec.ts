@@ -45,10 +45,10 @@ test("customer: own perimeter, proactive notices and the live delivery map", asy
   await page.goto("/");
   await page.getByLabel("Viewing as").selectOption("u-cust-solenne");
   await expect(page.getByRole("heading", { name: "Hello, Claire" })).toBeVisible();
-  await expect(page.getByTestId("customer-notice").first()).toContainText("Arriving today, 11:00–13:00");
+  await expect(page.getByTestId("customer-notice").first()).toContainText("Arriving today, 09:00–11:00");
 
   await page.getByTestId("card-shp-1004").click();
-  await expect(page.getByTestId("eta-main")).toHaveText("Today, 11:00–13:00");
+  await expect(page.getByTestId("eta-main")).toHaveText("Today, 09:00–11:00");
   await expect(page.getByText("Confirmed").first()).toBeVisible();
   await expect(page.locator(".leaflet-container")).toBeVisible();
 

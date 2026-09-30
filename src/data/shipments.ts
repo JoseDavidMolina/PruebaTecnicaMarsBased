@@ -1,4 +1,4 @@
-import { addHours, DEMO_NOW } from "@/lib/clock";
+import { addHours, DEMO_NOW, zonedParts } from "@/lib/clock";
 import { OPERATORS } from "@/domain/operators";
 import { DOCUMENT_LABELS } from "@/domain/types";
 import type { DocumentKind, OperatorId, Place, Position, RawEvent, Shipment, ShipmentDocument } from "@/domain/types";
@@ -7,9 +7,10 @@ import { CUSTOMERS, HUBS, PORTS, SITES } from "./reference";
 // Times are hours relative to DEMO_NOW (negative = past).
 const at = (h: number) => addHours(DEMO_NOW, h);
 const pad = (n: number) => String(n).padStart(2, "0");
-const utc = (h: number) => {
-  const d = new Date(at(h));
-  return { y: d.getUTCFullYear(), m: pad(d.getUTCMonth() + 1), d: pad(d.getUTCDate()), hh: pad(d.getUTCHours()), mm: pad(d.getUTCMinutes()) };
+// Wall-clock time in the operator's zone, as operators without an offset in their format send it.
+const local = (h: number, op: OperatorId) => {
+  const t = zonedParts(at(h), OPERATORS[op].timeZone!);
+  return { y: t.y, m: pad(t.m), d: pad(t.d), hh: pad(t.hh), mm: pad(t.mm) };
 };
 
 // --- Raw payloads, each in its operator's native format -----------------------
@@ -17,7 +18,7 @@ const utc = (h: number) => {
 const tv = (code: number, h: number, depot: string) => ({ code, ts: Math.round(new Date(at(h)).getTime() / 1000), depot });
 
 const ke = (status: string, h: number, city: string, window?: string) => {
-  const t = utc(h);
+  const t = local(h, "kestrel");
   return { status, time: `${t.d}/${t.m}/${t.y} ${t.hh}:${t.mm}`, city, ...(window && { window }) };
 };
 
@@ -30,7 +31,7 @@ const bm = (event: string, h: number, port: string, vessel?: string, etaH?: numb
 });
 
 const aw = (st: string, h: number, ort: string, txt?: string) => {
-  const t = utc(h);
+  const t = local(h, "alpenweg");
   return { st, datum: `${t.y}${t.m}${t.d}${t.hh}${t.mm}`, ort, ...(txt && { txt }) };
 };
 

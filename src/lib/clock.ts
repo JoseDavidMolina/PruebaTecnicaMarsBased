@@ -39,5 +39,33 @@ export const formatDateTime = (iso: string): string => `${formatDate(iso)}, ${fo
 export const formatLongDate = (iso: string): string =>
   new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: DISPLAY_TZ }).format(new Date(iso));
 
-export const isSameDay = (a: string | Date, b: string | Date): boolean =>
+export type WallClock = { y: number; m: number; d: number; hh: number; mm: number };
+
+/** The wall-clock reading of an instant in an IANA time zone. */
+export function zonedParts(date: string | Date, timeZone: string): WallClock {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric",
+  }).formatToParts(new Date(date));
+  const get = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((p) => p.type === type)!.value);
+  return { y: get("year"), m: get("month"), d: get("day"), hh: get("hour"), mm: get("minute") };
+}
+
+const MINUTE = 60_000;
+const offsetMinutes = (utcMs: number, timeZone: string) => {
+  const p = zonedParts(new Date(utcMs), timeZone);
+  return (Date.UTC(p.y, p.m - 1, p.d, p.hh, p.mm) - Math.floor(utcMs / MINUTE) * MINUTE) / MINUTE;
+};
+
+/**
+ * The instant a local wall-clock time refers to, DST included. Day overflow is allowed (d + 1).
+ * The second pass corrects a first guess that fell on the other side of a DST switch;
+ * a time repeated when clocks go back resolves to its later (winter-time) occurrence.
+ */
+export function fromZoned({ y, m, d, hh, mm }: WallClock, timeZone: string): string {
+  const asUtc = Date.UTC(y, m - 1, d, hh, mm);
+  const first = asUtc - offsetMinutes(asUtc, timeZone) * MINUTE;
+  return new Date(asUtc - offsetMinutes(first, timeZone) * MINUTE).toISOString();
+}
+
+export const isSameDay =(a: string | Date, b: string | Date): boolean =>
   formatDate(new Date(a).toISOString()) === formatDate(new Date(b).toISOString());
