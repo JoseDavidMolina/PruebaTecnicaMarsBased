@@ -230,12 +230,12 @@ const TimesNote = () => <>All times are Madrid time ({zoneName()}).</>;
 
 // --- Cards --------------------------------------------------------------------
 
-export function EtaCard({ facts, variant }: { facts: ShipmentFacts; variant: Variant }) {
+export function EtaCard({ facts, variant, className }: { facts: ShipmentFacts; variant: Variant; className?: string }) {
   const { eta, status, shipment } = facts;
   const delivered = status === "delivered";
   const t = etaText(eta, delivered);
   return (
-    <Card>
+    <Card className={className}>
       <CardContent className="space-y-3">
         <div className="text-xs font-semibold text-muted-foreground">
           {delivered ? "Delivered" : eta.reliability === "confirmed" ? "Delivery window" : "Estimated delivery"}
@@ -309,7 +309,7 @@ function SimulateCard({ shipment, received }: { shipment: TrackedShipment; recei
   if (!update) return null;
   const operator = OPERATORS[update.operatorId].name;
   return (
-    <Card size="sm" className="border border-dashed border-border bg-transparent ring-0">
+    <Card size="sm" className="bg-muted/60 shadow-none">
       <CardContent className="space-y-2">
         <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
           <Radio className="size-3.5" /> Demo control
@@ -324,10 +324,7 @@ function SimulateCard({ shipment, received }: { shipment: TrackedShipment; recei
           <form action={simulateUpdate} className="space-y-2">
             <p className="text-sm text-muted-foreground">Inject the next message from {operator}, as it would arrive from their feed.</p>
             <input type="hidden" name="shipmentId" value={shipment.id} />
-            <SubmitButton
-              pendingText="Receiving update…"
-              className="w-full justify-center bg-primary text-primary-foreground hover:bg-primary/90"
-            >
+            <SubmitButton pendingText="Receiving update…" className="w-full justify-center border border-input bg-card hover:bg-muted">
               <RefreshCw /> Simulate operator update
             </SubmitButton>
           </form>
@@ -411,9 +408,10 @@ export async function OpsShipmentDetail({ facts, received, done }: { facts: Ship
   return (
     <div className="space-y-6">
       <Header facts={facts} variant="ops" />
+      {/* Below lg the columns dissolve into one list, so the proposed action comes right after the ETA, not after the timeline. */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <EtaCard facts={facts} variant="ops" />
+        <div className="max-lg:contents lg:col-span-2 lg:space-y-6">
+          <EtaCard facts={facts} variant="ops" className="max-lg:order-first" />
           {outForDelivery && <MapCard shipment={s} />}
           <Card>
             <CardHeader>
@@ -439,8 +437,8 @@ export async function OpsShipmentDetail({ facts, received, done }: { facts: Ship
           </Card>
         </div>
 
-        <div className="space-y-6">
-          <Card className="ring-violet-200">
+        <div className="max-lg:contents lg:space-y-6">
+          <Card className="ring-violet-200 max-lg:-order-1">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Risk assessment <AiTag />
