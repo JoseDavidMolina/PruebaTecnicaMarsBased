@@ -120,17 +120,22 @@ export async function OpsDashboard({
       <Card>
         <CardContent className="space-y-3">
           <form action="/" className="flex flex-wrap gap-2">
-            <div className="relative min-w-72 flex-1">
+            <div className="relative basis-full sm:min-w-72 sm:flex-1 sm:basis-auto">
               <Sparkles className="pointer-events-none absolute top-2.5 left-3 size-4 text-violet-600" />
               <input
                 name="q"
                 defaultValue={params.q}
                 aria-label="Ask about your shipments"
-                placeholder="Ask about your shipments, e.g. “shipments to France this week running late”"
+                placeholder="Ask about your shipments…"
                 className="h-9 w-full rounded-md border border-input bg-card pr-3 pl-9 text-sm"
               />
             </div>
-            <AutoSubmitSelect name="site" defaultValue={params.site ?? ""} aria-label="Origin site">
+            <AutoSubmitSelect
+              name="site"
+              defaultValue={params.site ?? ""}
+              aria-label="Origin site"
+              className="min-w-0 flex-1 sm:flex-initial"
+            >
               <option value="">All sites</option>
               {sites.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -138,7 +143,7 @@ export async function OpsDashboard({
                 </option>
               ))}
             </AutoSubmitSelect>
-            <AutoSubmitSelect name="op" defaultValue={params.op ?? ""} aria-label="Operator">
+            <AutoSubmitSelect name="op" defaultValue={params.op ?? ""} aria-label="Operator" className="min-w-0 flex-1 sm:flex-initial">
               <option value="">All operators</option>
               {operatorIds.map((id) => (
                 <option key={id} value={id}>
@@ -229,8 +234,10 @@ export async function OpsDashboard({
         </div>
 
         <Card className="py-0">
-          <Table>
-            <TableHeader>
+          {/* Below lg each row stacks (risk and shipment, route, status and ETA, action) in the same table DOM, so the
+              proposed action is never off-screen behind a sideways scroll. */}
+          <Table className="max-lg:block">
+            <TableHeader className="max-lg:sr-only">
               <TableRow>
                 <TableHead className="pl-4">Risk</TableHead>
                 <TableHead>Shipment</TableHead>
@@ -242,17 +249,21 @@ export async function OpsDashboard({
                 </TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="max-lg:block">
               {rows.map((f) => {
                 const s = f.shipment;
                 const action = actions.get(s.id)!;
                 const Icon = ACTION_ICON[action.kind];
                 return (
-                  <TableRow key={s.id} className="align-top" data-testid={`row-${s.id}`}>
-                    <TableCell className="pl-4">
+                  <TableRow
+                    key={s.id}
+                    className="align-top max-lg:flex max-lg:flex-wrap max-lg:items-center max-lg:gap-x-3 max-lg:gap-y-3 max-lg:p-4"
+                    data-testid={`row-${s.id}`}
+                  >
+                    <TableCell className="pl-4 max-lg:p-0">
                       <RiskBadge risk={f.risk} />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="max-lg:min-w-0 max-lg:flex-1 max-lg:p-0">
                       <Link href={`/shipments/${s.id}`} className="font-medium underline-offset-2 hover:underline">
                         {s.reference}
                       </Link>
@@ -260,7 +271,7 @@ export async function OpsDashboard({
                         {s.orderRef} · {customerOf(s).name}
                       </div>
                     </TableCell>
-                    <TableCell className="max-w-64 text-sm whitespace-normal">
+                    <TableCell className="max-w-64 text-sm whitespace-normal max-lg:max-w-none max-lg:basis-full max-lg:p-0">
                       <div>
                         {siteOf(s).place.name} → {customerOf(s).place.name}
                       </div>
@@ -269,16 +280,16 @@ export async function OpsDashboard({
                         <div>{[...new Set(s.legs.map((l) => OPERATORS[l.operatorId].name))].join(", ")}</div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="max-lg:p-0">
                       <div className="flex flex-col items-start gap-1">
                         <StatusBadge status={f.status} />
                         {f.stale && <StaleBadge hours={hoursSinceUpdate(s) ?? 0} />}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="max-lg:flex-1 max-lg:p-0">
                       <EtaCell eta={f.eta} delivered={f.status === "delivered"} stale={f.stale} />
                     </TableCell>
-                    <TableCell className="max-w-52 pr-4 whitespace-normal">
+                    <TableCell className="max-w-52 pr-4 whitespace-normal max-lg:max-w-none max-lg:basis-full max-lg:p-0">
                       {action.kind === "none" ? (
                         <span className="flex gap-2 text-sm text-muted-foreground">
                           <Icon className="mt-0.5 size-4 shrink-0 text-emerald-600" /> No action needed
@@ -299,8 +310,8 @@ export async function OpsDashboard({
                 );
               })}
               {rows.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                <TableRow className="max-lg:block">
+                  <TableCell colSpan={6} className="py-10 text-center whitespace-normal text-muted-foreground max-lg:block">
                     {view !== "attention"
                       ? "No shipments match."
                       : handledCount
