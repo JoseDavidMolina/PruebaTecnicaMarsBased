@@ -79,4 +79,9 @@ describe("unifiedTimeline", () => {
       ["on_vessel", "estimated"],
     ]);
   });
+
+  it("keeps an overdue plan after the confirmed events", () => {
+    const s = track(shipment([leg(1, "road"), leg(2, "sea", { plannedDeparture: addHours(DEMO_NOW, -24) })], [tv("L1", 20, 5)]));
+    expect(unifiedTimeline(s).map((m) => m.reliability)).toEqual(["confirmed", "estimated"]);
+  });
 });

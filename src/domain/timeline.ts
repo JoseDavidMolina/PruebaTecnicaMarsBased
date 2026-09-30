@@ -70,7 +70,10 @@ export function isStale(s: TrackedShipment, now: Date = DEMO_NOW): boolean {
   return hoursBetween(reference, now) > STALE_AFTER_HOURS[leg.mode];
 }
 
-/** Confirmed milestones plus one estimated "planned departure" for each leg not started yet. */
+/**
+ * Confirmed milestones, then one estimated "planned departure" per leg not started yet, in leg order.
+ * Planned items never interleave with real ones: a plan whose date already passed is still a plan.
+ */
 export function unifiedTimeline(s: TrackedShipment): Milestone[] {
   const started = new Set(s.milestones.map((m) => m.legId));
   const planned: Milestone[] = s.legs
@@ -85,5 +88,5 @@ export function unifiedTimeline(s: TrackedShipment): Milestone[] {
       location: l.from.name,
       reliability: "estimated",
     }));
-  return [...s.milestones, ...planned].sort((a, b) => a.at.localeCompare(b.at));
+  return [...s.milestones, ...planned];
 }

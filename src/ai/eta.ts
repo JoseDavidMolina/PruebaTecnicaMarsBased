@@ -1,4 +1,4 @@
-import { addHours, DEMO_NOW, formatDate, formatTime, hoursBetween } from "@/lib/clock";
+import { addHours, DEMO_NOW, formatDate, formatDuration, formatTime, hoursBetween } from "@/lib/clock";
 import { OPERATORS } from "@/domain/operators";
 import { activeLeg, currentStatus, hoursSinceUpdate, isStale, reportedEta } from "@/domain/timeline";
 import type { Confidence, Leg, Mode, TrackedShipment } from "@/domain/types";
@@ -75,9 +75,13 @@ export function predictEta(s: TrackedShipment, now: Date = DEMO_NOW): EtaPredict
     uncertainty += silent;
     reasons.push(`No operator update for ${Math.round(silent)}h, so this assumes planned progress.`);
   }
-  for (const next of s.legs.filter((l) => l.seq > leg.seq)) {
+  const remaining = s.legs.filter((l) => l.seq > leg.seq);
+  for (const next of remaining) {
     hoursLeft += duration(next);
     uncertainty += LEG_UNCERTAINTY_HOURS[next.mode];
+  }
+  if (remaining.length) {
+    reasons.push(`Then ${remaining.map((l) => `${l.mode} to ${l.to.name} (${formatDuration(duration(l))} planned)`).join(", ")}.`);
   }
 
   hoursLeft = Math.max(1, hoursLeft);
